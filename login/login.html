@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CITEI - Inicio de Sesión</title>
+    <script src="../js/pie.js"></script>
+    <script src="../js/navbar.js"></script>
+
+</head>
+
+<body>
+    <div class="login__contenedor">
+        <form id="loginForm" class="login__formulario">
+            <p id="errorMessage">Ingrese su correo y contraseña</p>
+            <div class="login__datos">
+                <label for="correo">Correo Electrónico</label>
+                <input id="correo" type="email" name="correo" required>
+            </div>
+            <div class="login__datos">
+                <label for="clave">Contraseña</label>
+                <input id="clave" type="password" name="clave" required>
+            </div>
+            <div class="login__botones">
+                <div class="alinear-izquierda">
+                    <a href="../olvido_contraseña/olvido_contraseña.php">Olvidé mi contraseña</a> <br>
+                    <a href="../registro/registro.php">Registrarme</a>
+                </div>
+                <button class="login__boton" type="submit">Ingresar</button>
+            </div>
+        </form>
+    </div>
+    <script src="login.js"></script>
+</body>
+
+</html>
