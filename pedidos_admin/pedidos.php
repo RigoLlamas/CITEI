@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
     <title>Gestión de Pedidos - Administrador</title>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
+    <script src="pedidos.js"></script>
 </head>
 <body>
     <div class="dos-columnas-envios">
@@ -91,52 +92,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
             <!-- Formulario de filtro por año, mes y día -->
             <form action="" method="GET">
                 <h2>Filtrar Historial de Pedidos</h2>
-                <div>
-                    <label style="max-width: 10rem;" for="anio">Año</label>
-                    <select name="anio" id="anio">
-                        <option value="">Todos</option>
-                        <?php
-                        // Generar opciones de año dinámicamente, por ejemplo, últimos 5 años
-                        for ($i = date('Y'); $i >= date('Y') - 5; $i--) {
-                            echo "<option value=\"$i\">$i</option>";
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div>
-                    <label for="mes">Mes</label>
-                    <select name="mes" id="mes">
-                        <option value="">Todos</option>
-                        <?php
-                        // Meses del año
-                        $meses = [
-                            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 
-                            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto', 
-                            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
-                        ];
-                        foreach ($meses as $num => $nombreMes) {
-                            echo "<option value=\"$num\">$nombreMes</option>";
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div>
-                    <label for="dia">Día</label>
-                    <select name="dia" id="dia">
-                        <option value="">Todos</option>
-                        <?php
-                        // Días del mes
-                        for ($i = 1; $i <= 31; $i++) {
-                            echo "<option value=\"$i\">$i</option>";
-                        }
-                        ?>
-                    </select>
-                </div>
+                    <div>
+                        <label for="anio">Año<br></label>
+                        <select name="anio" id="anio">
+                            <option value="">Todos</option>
+                            <?php
+                            for ($i = date('Y'); $i >= date('Y') - 5; $i--) {
+                                echo "<option value=\"$i\">$i</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="mes">Mes<br></label>
+                        <select name="mes" id="mes" onchange="actualizarDias()">
+                            <option value="">Todos</option>
+                            <?php
+                            $meses = [
+                                1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 
+                                5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto', 
+                                9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+                            ];
+                            foreach ($meses as $num => $nombreMes) {
+                                echo "<option value=\"$num\">$nombreMes</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="dia">Día<br></label>
+                        <select name="dia" id="dia">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
                 <button type="submit">Filtrar</button>
             </form>
         </div>
 
-        <!-- Resto del código para mostrar el historial de pedidos o detalles específicos -->
+
         <?php if (isset($detallesPedido) && !empty($detallesPedido)): ?>
             <!-- Mostrar detalles de un pedido específico -->
             <div class="cuadro">
