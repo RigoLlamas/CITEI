@@ -1,11 +1,18 @@
 <?php
 session_start();
+include '../php/conexion.php';
 
 if (isset($_SESSION['id_usuario'])) {
     $isAdmin = $_SESSION['id_usuario'] == '1';
 } else {
     $isAdmin = false;
 }
+
+// Consultar la cantidad de productos visibles
+$sql_cantidad = "SELECT COUNT(*) AS total_productos FROM producto WHERE Visibilidad = 1";
+$result_cantidad = $conexion->query($sql_cantidad);
+$total_productos = $result_cantidad->fetch_assoc()['total_productos'];
+
 ?>
 
 <!DOCTYPE html>
@@ -26,27 +33,63 @@ if (isset($_SESSION['id_usuario'])) {
             <div class="cuadro">
                 <p>Populares</p>
                 <?php
-                /*
-                // Consulta a la base de datos por popular
-                $sql = "SELECT PK_Producto, Nombre, Precio, Ventas FROM Producto WHERE Ventas > 10 ORDER BY Ventas DESC LIMIT 3";
-                $populares = $conexion->query($sql);
+                    // Consulta a la base de datos por productos populares
+                    $sql_populares = "
+                        SELECT p.PK_Producto, p.Nombre, p.Precio, SUM(d.Cantidad) AS Ventas 
+                        FROM producto p
+                        JOIN detalles d ON p.PK_Producto = d.Producto
+                        JOIN pedidos ped ON d.NumVenta = ped.NumVenta
+                        WHERE p.Visibilidad = 1
+                        GROUP BY p.PK_Producto
+                        HAVING Ventas > 10
+                        ORDER BY Ventas DESC
+                        LIMIT 3";
+                    $populares = $conexion->query($sql_populares);
 
-                // Verificar si hay resultados
-                if ($populares->num_rows > 0) {
-                    echo '<div class="contenedor-productos">';
-                    while($row = $populares->fetch_assoc()) {
-                        echo '<div class="producto">';
-                        echo '<p>' . $row["Nombre"] . '</p>';
-                        echo '<p>$' . $row["Precio"] . '</p>';
+                    // Verificar si hay resultados para productos populares
+                    if ($populares->num_rows > 0) {
+                        echo '<div class="contenedor-productos-populares">';
+                        while ($row = $populares->fetch_assoc()) {
+                            // Ruta base de las imágenes
+                            $ruta_base_imagenes = 'imagenes_productos/';
+                            $ruta_logo = '../img/logo.png'; // Ruta del logo por defecto
+                            
+                            // Ruta a la carpeta de imágenes del producto
+                            $carpeta_imagenes = $ruta_base_imagenes . 'producto_' . $row["PK_Producto"] . '/';
+                            
+                            // Obtener la primera imagen de la carpeta para mostrar en la vista general
+                            $ruta_imagen = $carpeta_imagenes . '1.jpg';
+
+                            if (!file_exists($ruta_imagen)) {
+                                // Si no existe la imagen, usar el logo por defecto
+                                $ruta_imagen = $ruta_logo;
+                                $imagenes_json = json_encode([$ruta_logo]); // Pasamos el logo como única imagen en el array JSON
+                            } else {
+                                // Si existen imágenes, las obtenemos con glob()
+                                $imagenes_producto = glob($carpeta_imagenes . '*.{jpg,jpeg,png,gif}', GLOB_BRACE);
+                                $imagenes_json = json_encode($imagenes_producto); // Convertimos las rutas de las imágenes en un array JSON
+                            }
+                            
+                            echo '<div class="producto" 
+                                    data-id="' . $row["PK_Producto"] . '" 
+                                    data-nombre="' . strtolower($row["Nombre"]) . '" 
+                                    data-precio="' . $row["Precio"] . '" 
+                                    data-imgs=\'' . $imagenes_json . '\'>';
+
+                            // Mostramos la imagen del producto en la vista general (solo la primera o el logo)
+                            echo '<img src="' . $ruta_imagen . '" alt="' . $row["Nombre"] . '" style="max-width: 100%; height: auto;">';
+
+                            // Mostramos los datos visibles del producto
+                            echo '<div class="texto_productos"> 
+                                    <p>' . $row["Nombre"] . '</p>
+                                    <p>$' . $row["Precio"] . '</p>
+                                </div> 
+                                </div>';
+                        }
                         echo '</div>';
+                    } else {
+                        echo "No hay productos populares disponibles.";
                     }
-                    echo '</div>';
-                } else {
-                    echo "No hay productos disponibles.";
-                }
-
-                $conexion->close();
-                */
                 ?>
             </div>
             <div class="cuadro">
@@ -56,9 +99,11 @@ if (isset($_SESSION['id_usuario'])) {
                     maxlength="150">
                     <?php 
                     if($isAdmin){
-                        echo '<button id="boton-carrito" style="margin-left: 10%; width: 20%;">
-                                    Agregar Producto
-                                </button>';    
+                        if($total_productos <= 60){
+                            echo '<button id="boton-carrito" style="margin-left: 10%; width: 20%;">
+                            Agregar Producto' . $total_productos . '
+                        </button>' ;   
+                        }
                     } else{
                         if (isset($_SESSION['id_usuario'])) {
                             echo '<button id="boton-carrito" style="margin-left: 10%; width: 20%;" onclick="redirigirAlCarrito()">
@@ -66,13 +111,10 @@ if (isset($_SESSION['id_usuario'])) {
                             </button>';
                         }
                     }
-                    ?>
-                    
+                    ?> 
                 </div>
-
             <?php
                 // Incluimos el archivo de conexión a la base de datos
-                include '../php/conexion.php';
 
                 // Ruta base de las imágenes
                 $ruta_base_imagenes = 'imagenes_productos/';
