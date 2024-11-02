@@ -260,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
         const templateParams = {
             to_email: datosUsuario.correo,      // Correo del usuario
+            bcc_email: "citeinotificaciones@gmail.com",
             message: mensaje                    // Mensaje generado dinámicamente
         };
     

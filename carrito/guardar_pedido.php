@@ -40,7 +40,7 @@
     //Insertar el pedido en la tabla `pedidos`
     $queryPedido = "INSERT INTO pedidos (Fecha, Estado, Codigo, Clave, FK_Usuario) VALUES (NOW(), ?, ?, ?, ?)";
     $stmtPedido = $conexion->prepare($queryPedido);
-    $estadoPedido = 'Pagado';
+    $estadoPedido = 'Solicitado';
     $codigo = str_pad(random_int(0, 9999999999999999), 16, '0', STR_PAD_LEFT);
     $clave = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
     
