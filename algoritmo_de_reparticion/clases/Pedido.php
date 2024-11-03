@@ -1,5 +1,5 @@
 <?php
-class Nodo {
+class Pedido {
     public $pedido;
     public $longitud;
     public $latitud;

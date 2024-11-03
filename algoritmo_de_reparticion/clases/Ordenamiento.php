@@ -3,9 +3,41 @@
 class Ordenamiento {
     private $conexion;
 
-    // Constructor para inicializar la conexión a la base de datos
+    // Constante para el radio de la Tierra en kilómetros
+    private const RADIO_TIERRA = 6378;
+
     public function __construct($conexion) {
         $this->conexion = $conexion;
+    }
+
+    // Método para calcular la distancia entre dos puntos con la fórmula de Haversine
+    public function calcularDistanciaHaversine($lat1, $lon1, $lat2, $lon2) {
+        // Convertir grados a radianes
+        $lat1 = deg2rad($lat1);
+        $lon1 = deg2rad($lon1);
+        $lat2 = deg2rad($lat2);
+        $lon2 = deg2rad($lon2);
+
+        // Fórmula de Haversine
+        $difLat = $lat2 - $lat1;
+        $difLon = $lon2 - $lon1;
+        $a = sin($difLat / 2) ** 2 + cos($lat1) * cos($lat2) * sin($difLon / 2) ** 2;
+        $c = 2 * asin(sqrt($a));
+
+        return self::RADIO_TIERRA * $c;
+    }
+
+    public function calcularTiempoViaje($origenLat, $origenLng, $destinoLat, $destinoLng) {
+        $url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={$origenLat},{$origenLng}&destinations={$destinoLat},{$destinoLng}&key={$this->apiKey}";
+
+        $response = file_get_contents($url);
+        $data = json_decode($response, true);
+
+        if ($data['status'] == 'OK') {
+            $duracionSegundos = $data['rows'][0]['elements'][0]['duration']['value'];
+            return $duracionSegundos; // Devuelve el tiempo en segundos
+        }
+        return null; // Manejo de errores en caso de fallo en la solicitud
     }
 
     // Método para obtener los pedidos en estado de "Entrega parcial" (prioritarios)
@@ -36,32 +68,35 @@ class Ordenamiento {
         return $vehiculo ? $vehiculo['Placa'] : null;
     }
 
-    // Método para asignar pedidos a repartidores según criterios específicos
-    public function asignarPedidoARepartidor($numVenta, $repartidorId, $vehiculo) {
+    // Método para asignar un pedido a un repartidor y actualizar el estado
+    public function asignarPedidoARepartidor($pedido, $repartidor, $vehiculo) {
+        if (!$repartidor->puedeTransportarPedido($pedido->volumen_total, $pedido->largo_maximo, $pedido->alto_maximo, $pedido->ancho_maximo)) {
+            echo "El pedido excede el volumen o las dimensiones del vehículo. No se puede asignar.";
+            return false;
+        }
+
         $sql_detalles = "SELECT Producto, Cantidad FROM detalles WHERE NumVenta = ?";
         $stmt_detalles = $this->conexion->prepare($sql_detalles);
-        $stmt_detalles->bind_param("i", $numVenta);
+        $stmt_detalles->bind_param("i", $pedido->pedido);
         $stmt_detalles->execute();
         $resultado_detalles = $stmt_detalles->get_result();
 
-        // Procesar cada producto en el pedido
         while ($detalle = $resultado_detalles->fetch_assoc()) {
             $producto = $detalle['Producto'];
             $cantidad = $detalle['Cantidad'];
 
-            // Registrar el envío en la tabla envios
             $sql_envio = "INSERT INTO envios (OrdenR, Cantidad, Vehiculo, Producto, Repartidor, NumVenta) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt_envio = $this->conexion->prepare($sql_envio);
-            $orden_ruta = 1; // Placeholder para el orden de ruta
-            $stmt_envio->bind_param("iisiii", $orden_ruta, $cantidad, $vehiculo, $producto, $repartidorId, $numVenta);
+            $orden_ruta = 1;
+            $stmt_envio->bind_param("iisiii", $orden_ruta, $cantidad, $vehiculo, $producto, $repartidor->nomina, $pedido->pedido);
             $stmt_envio->execute();
 
-            // Actualizar el estado del pedido a "En camino"
-            $this->actualizarEstadoPedido($numVenta, 'En camino');
+            $this->actualizarEstadoPedido($pedido->pedido, 'En camino');
         }
+        return true;
     }
 
-    // Método para actualizar el estado del pedido
+    // Método privado para actualizar el estado del pedido
     private function actualizarEstadoPedido($numVenta, $estado) {
         $sql_actualizar = "UPDATE pedidos SET Estado = ? WHERE NumVenta = ?";
         $stmt = $this->conexion->prepare($sql_actualizar);
@@ -69,4 +104,5 @@ class Ordenamiento {
         $stmt->execute();
     }
 }
+
 ?>

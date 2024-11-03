@@ -1,8 +1,10 @@
 <?php
 // Incluir los archivos de conexión y funciones
 include_once '../php/conexion.php';
-include_once 'clases/Pedidos.php';
+include_once 'funciones_de_reparticion.php';
+include_once 'clases/Pedido.php';
 include_once 'clases/Ordenamiento.php';
+include_once 'clases/Nodo.php';
 
 // Proceso principal para la asignación de pedidos
 $total_pedidos = obtenerTotalPedidos($conexion);
