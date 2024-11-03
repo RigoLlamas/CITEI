@@ -2,7 +2,7 @@
 class Repartidor {
     public $matricula;
     public $nomina;
-    public $volumendisponible; // Volumen actualmente disponible en el vehículo
+    public $volumenOcupado;         // Volumen actualmente ocupado en el vehículo
     public $largo;
     public $alto;
     public $ancho;
@@ -11,30 +11,43 @@ class Repartidor {
     private $hora_inicio;
     public $es_foraneo;
 
-    public function __construct($matricula, $nomina, $largo, $alto, $ancho, $hora_limite = '18:00', $es_foraneo = false, $tiempo = 0) {
+    public function __construct($matricula, $nomina, $largo, $alto, $ancho, $hora_limite = '18:00', $es_foraneo = false) {
         $this->matricula = $matricula;
         $this->nomina = $nomina;
-        $this->volumendisponible = $largo * $ancho * $alto; // Volumen total inicial
+        $this->volumenOcupado = 0;
         $this->largo = $largo;
         $this->alto = $alto;
         $this->ancho = $ancho;
         $this->hora_limite = $hora_limite;
-        $this->tiempo = $tiempo;
+        $this->tiempo = 0;
         $this->hora_inicio = new DateTime('09:00'); 
         $this->es_foraneo = $es_foraneo;
     }
 
-    // Verifica si el pedido cumple tanto con el volumen como con las dimensiones máximas del vehículo
+    // Calcula el volumen total del vehículo basado en las dimensiones de la cabina
+    public function calcularVolumenTotalVehiculo() {
+        return $this->largo * $this->alto * $this->ancho;
+    }
+
+    // Calcula el volumen disponible en el vehículo
+    public function calcularVolumenDisponible() {
+        return $this->calcularVolumenTotalVehiculo() - $this->volumenOcupado;
+    }
+
+    // Verifica si el pedido cumple con el volumen y dimensiones del vehículo
     public function puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido) {
-        $dimensionesCorrectas = $largoPedido <= $this->largo && $altoPedido <= $this->alto && $anchoPedido <= $this->ancho;
-        return $volumenPedido <= $this->volumendisponible && $dimensionesCorrectas;
+        $volumenDisponible = $this->calcularVolumenDisponible();
+        $volumenAdecuado = $volumenPedido <= $volumenDisponible;
+        $dimensionesAdecuadas = $largoPedido <= $this->largo && $altoPedido <= $this->alto && $anchoPedido <= $this->ancho;
+        return $volumenAdecuado && $dimensionesAdecuadas;
     }
 
-    // Método para reducir el volumen disponible cuando se asigna un pedido
-    public function asignarVolumenPedido($volumenPedido) {
-        $this->volumendisponible -= $volumenPedido;
+    // Actualiza el volumen ocupado del vehículo al asignar un pedido
+    public function actualizarVolumenOcupado($volumenPedido) {
+        $this->volumenOcupado += $volumenPedido;
     }
 
+    // Método para agregar un pedido si cumple con el volumen, dimensiones y tiempo
     public function agregarPedido($volumenPedido, $tiempoEstimado, $tiempoEntreNodos) {
         $tiempoConImprevistos = $tiempoEntreNodos + 10;
 
@@ -43,18 +56,28 @@ class Repartidor {
             $this->tiempo += 60; // Añadir una hora para comida
         }
 
-        if ($this->puedeTransportarPedido($volumenPedido, $this->largo, $this->alto, $this->ancho) && $this->puedeTrabajarHasta($tiempoEstimado + $tiempoConImprevistos)) {
-            $this->asignarVolumenPedido($volumenPedido); // Restar el volumen del pedido del volumen disponible
-            $this->actualizarTiempo($tiempoEstimado + $tiempoConImprevistos);
-            return true;
+        // Verificar volumen y dimensiones antes de agregar
+        if (!$this->puedeTransportarPedido($volumenPedido, $this->largo, $this->alto, $this->ancho)) {
+            return false; // No se puede asignar debido a restricciones de volumen o dimensiones
         }
-        return false;
+
+        // Verificar si el repartidor puede trabajar hasta la hora límite
+        if (!$this->puedeTrabajarHasta($tiempoEstimado + $tiempoConImprevistos)) {
+            return false; // No se puede asignar debido a restricciones de tiempo
+        }
+
+        // Asignar el pedido y actualizar tiempo
+        $this->actualizarVolumenOcupado($volumenPedido);
+        $this->actualizarTiempo($tiempoEstimado + $tiempoConImprevistos);
+        return true;
     }
 
+    // Actualizar el tiempo total trabajado por el repartidor
     public function actualizarTiempo($incremento) {
         $this->tiempo += $incremento;
     }
 
+    // Verificar si el repartidor puede trabajar hasta una hora límite estimada
     public function puedeTrabajarHasta($tiempoEstimado) {
         $hora_inicio = clone $this->hora_inicio;
         $hora_inicio->modify("+{$this->tiempo} minutes");
@@ -65,10 +88,10 @@ class Repartidor {
         return $hora_final <= $hora_limite;
     }
 
+    // Verificar si el repartidor ya ha tenido tiempo de comida
     private function tieneTiempoDeComida() {
         return $this->tiempo >= 60;
     }
 }
 ?>
-
 

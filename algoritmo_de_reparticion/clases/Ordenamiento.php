@@ -29,17 +29,40 @@ class Ordenamiento {
         return self::RADIO_TIERRA * $c;
     }
 
+    function obtenerCoordenadas($direccion) {
+        $config = include 'config.php';
+        $apiKey = $config['google_maps_api_key'];
+        $direccionFormateada = urlencode($direccion);
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$direccionFormateada}&key={$apiKey}";
+    
+        // Realizar la solicitud HTTP
+        $response = file_get_contents($url);
+        $data = json_decode($response, true);
+    
+        // Verificar que la solicitud fue exitosa
+        if ($data['status'] === 'OK') {
+            $coordenadas = $data['results'][0]['geometry']['location'];
+            return [
+                'latitud' => $coordenadas['lat'],
+                'longitud' => $coordenadas['lng']
+            ];
+        } else {
+            return null; // Manejo de errores en caso de fallo en la solicitud
+        }
+    }
+    
+
     public function calcularTiempoViaje($origenLat, $origenLng, $destinoLat, $destinoLng) {
-        $url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={$origenLat},{$origenLng}&destinations={$destinoLat},{$destinoLng}&key={$this->apiKey}";
+        $url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={$origenLat},{$origenLng}&destinations={$destinoLat},{$destinoLng}&key={$apiKey}";
 
         $response = file_get_contents($url);
         $data = json_decode($response, true);
 
         if ($data['status'] == 'OK') {
             $duracionSegundos = $data['rows'][0]['elements'][0]['duration']['value'];
-            return $duracionSegundos; // Devuelve el tiempo en segundos
+            return $duracionSegundos;
         }
-        return null; // Manejo de errores en caso de fallo en la solicitud
+        return null;
     }
 
     // Método para obtener los pedidos en estado de "Entrega parcial" (prioritarios)
