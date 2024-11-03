@@ -1,9 +1,12 @@
 <?php
-    // Datos de la base de datos local
-    $servername = "citei.c34sm80cijk7.us-east-2.rds.amazonaws.com";
-    $username = "adminCITEI";
-    $password = "XjqcRn6EfvUuFIwu";
-    $dbname = "citei";
+
+    $config = include '../config.php';
+
+    // Obtener detalles de conexión a la base de datos desde config.php
+    $servername = $config['database']['host'];
+    $username = $config['database']['user'];
+    $password = $config['database']['password'];
+    $dbname = $config['database']['dbname'];
 
     // Crear conexión
     $conexion = new mysqli($servername, $username, $password, $dbname);

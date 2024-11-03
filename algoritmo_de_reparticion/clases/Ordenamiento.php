@@ -1,6 +1,8 @@
 <?php
 
 class Ordenamiento {
+    private $config = include 'config.php';
+    private $apiKey = $config['google_maps_api_key'];
     private $conexion;
 
     // Constante para el radio de la Tierra en kilómetros

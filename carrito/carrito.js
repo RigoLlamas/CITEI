@@ -231,10 +231,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error en el pago:', err);
             alert('Ocurrió un error con el pago.');
         }
-    }).render('#paypal-button-container'); // Renderizar el botón dentro del div
+    }).render('#paypal-button-container');
 
     function enviarCorreoElectronico(datosPedido, datosUsuario) {
-
+        // Generar el mensaje del correo
         const mensaje = `
             Hola ${datosUsuario.nombre},
     
@@ -258,22 +258,29 @@ document.addEventListener('DOMContentLoaded', function() {
             Gracias por tu compra.
         `;
     
-        const templateParams = {
-            to_email: datosUsuario.correo,      // Correo del usuario
-            bcc_email: "citeinotificaciones@gmail.com",
-            message: mensaje                    // Mensaje generado dinámicamente
-        };
+        // Obtener configuraciones desde el backend
+        fetch('../php/obtener_email_config.php')
+            .then(response => response.json())
+            .then(config => {
+                const templateParams = {
+                    to_email: datosUsuario.correo,      // Correo del usuario
+                    bcc_email: "citeinotificaciones@gmail.com",
+                    message: mensaje                    // Mensaje generado dinámicamente
+                };
     
-        // Llamar a EmailJS para enviar el correo con el mensaje personalizado
-        emailjs.send('service_xigafai', 'template_92c5pvi', templateParams)
-        .then(function(response) {
-            console.log('Correo enviado con éxito', response.status, response.text);
-        }, function(err) {
-            console.error('Error al enviar el correo:', err);
-        });
-        actualizarTotal();
-        verificarCarritoVacio();
+                // Llamar a EmailJS para enviar el correo con el mensaje personalizado
+                return emailjs.send(config.service_id, config.template_message, templateParams, config.user_id);
+            })
+            .then(response => {
+                console.log('Correo enviado con éxito', response.status, response.text);
+                actualizarTotal();
+                verificarCarritoVacio();
+            })
+            .catch(error => {
+                console.error('Error al enviar el correo:', error);
+            });
     }
+    
 
     // Función para aplicar la oferta
     document.querySelectorAll('.aplicar-oferta').forEach(boton => {

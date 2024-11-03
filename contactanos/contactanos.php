@@ -1,6 +1,9 @@
 <?php
 session_start();
 $isAdmin = isset($_SESSION['id_usuario']) && $_SESSION['id_usuario'] == '1';
+
+$config = include '../config.php';
+$googleMapsApiKey = $config['api_keys']['google_maps'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -13,7 +16,7 @@ $isAdmin = isset($_SESSION['id_usuario']) && $_SESSION['id_usuario'] == '1';
     <script src="../js/pie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/sweetalert.js"></script>
-    <script type="module" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTtTA9nfl0phn0i-i4VYbgRbvIB_MzaOs&libraries=marker&v=beta&map_ids=DEMO_MAP_ID"></script>
+    <script type="module" src="https://maps.googleapis.com/maps/api/js?key=<?php echo $googleMapsApiKey; ?>&libraries=marker&v=beta&map_ids=DEMO_MAP_ID"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
