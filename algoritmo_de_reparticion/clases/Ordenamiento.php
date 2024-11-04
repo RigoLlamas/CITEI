@@ -135,116 +135,80 @@ class Ordenamiento {
         return $ruta; // Devuelve todos los nodos en el orden correcto
     }
 
-    /*public function asignarNodosARepartidores($nodos, $repartidores, $sede) {
-        $nodosAsignados = [];
+    public function asignarNodosARepartidores($pedidos, $repartidores, $sede) {
+        $nodosAsignados = []; // Almacena los pedidos asignados a cada repartidor
     
-        foreach ($nodos as $nodo => $coordenadasNodo) {
-            $nodoAsignado = null;
-            $distanciaMinima = INF;
-    
-            // Valores predeterminados si no están definidos en el nodo
-            $volumenPedido = $coordenadasNodo['volumen'] ?? 1.0;
-            $largoPedido = $coordenadasNodo['largo'] ?? 1.0;
-            $altoPedido = $coordenadasNodo['alto'] ?? 1.0;
-            $anchoPedido = $coordenadasNodo['ancho'] ?? 1.0;
-    
-            foreach ($repartidores as $repartidor) {
-                // Verificar si el repartidor puede transportar el pedido
-                if ($repartidor->puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido)) {
-                    // Calcular distancia del repartidor al nodo
-                    $distanciaARepartidor = $this->calcularDistanciaHaversine(
-                        $sede['latitud'], 
-                        $sede['longitud'], 
-                        $coordenadasNodo['latitud'], 
-                        $coordenadasNodo['longitud']
-                    );
-    
-                    // Asigna el nodo al repartidor más cercano con suficiente espacio disponible
-                    if ($distanciaARepartidor < $distanciaMinima) {
-                        $distanciaMinima = $distanciaARepartidor;
-                        $nodoAsignado = $repartidor;
-                    }
-                }
-            }
-    
-            // Asignar el nodo al repartidor seleccionado y actualizar el volumen ocupado
-            if ($nodoAsignado) {
-                $nodoAsignado->actualizarVolumenOcupado($volumenPedido); // Actualizar volumen ocupado
-                $nodosAsignados[$nodoAsignado->nomina][] = $nodo; // Añadir el nodo al array de asignados
-                echo "Pedido $nodo asignado a repartidor {$nodoAsignado->nomina}.<br>";
-            }
+        // Inicializar la posición de cada repartidor en la sede
+        foreach ($repartidores as $repartidor) {
+            $repartidor->latitud = $sede['latitud'];
+            $repartidor->longitud = $sede['longitud'];
         }
     
-        return $nodosAsignados; // Devuelve un arreglo de repartidores con sus respectivos nodos asignados
-    }*/
-
-    public function asignarNodosARepartidores($nodos, $repartidores, $sede) {
-        $nodosAsignados = [];
-    
-        foreach ($nodos as $nodo => $coordenadasNodo) {
+        foreach ($pedidos as $pedido) {
+            echo "Procesando {$pedido->pedido} - Volumen: {$pedido->volumen_total}, Dimensiones: {$pedido->largo_maximo} x {$pedido->alto_maximo} x {$pedido->ancho_maximo}<br>";
+            
             $nodoAsignado = null;
             $distanciaMinima = INF;
-            $volumenPedido = $coordenadasNodo['volumen'] ?? 1.0;
-            $largoPedido = $coordenadasNodo['largo'] ?? 1.0;
-            $altoPedido = $coordenadasNodo['alto'] ?? 1.0;
-            $anchoPedido = $coordenadasNodo['ancho'] ?? 1.0;
-    
-            echo "Procesando $nodo - Volumen: $volumenPedido, Dimensiones: $largoPedido x $altoPedido x $anchoPedido<br>";
     
             foreach ($repartidores as $repartidor) {
-                if ($repartidor->puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido)) {
+                $puedeTransportar = $repartidor->puedeTransportarPedido($pedido->volumen_total, $pedido->largo_maximo, $pedido->alto_maximo, $pedido->ancho_maximo);
+                
+                // Verifica si el repartidor puede transportar el pedido
+                if ($puedeTransportar) {
+                    // Calcula la distancia desde la ubicación actual del repartidor al pedido
                     $distanciaARepartidor = $this->calcularDistanciaHaversine(
-                        $sede['latitud'], 
-                        $sede['longitud'], 
-                        $coordenadasNodo['latitud'], 
-                        $coordenadasNodo['longitud']
+                        $repartidor->latitud,
+                        $repartidor->longitud,
+                        $pedido->latitud,
+                        $pedido->longitud
                     );
     
-                    echo "Evaluando $nodo para repartidor {$repartidor->nomina} - Distancia: $distanciaARepartidor<br>";
+                    echo "Evaluando {$pedido->pedido} para repartidor {$repartidor->nomina} - Distancia: $distanciaARepartidor<br>";
     
+                    // Asigna el nodo al repartidor con menor distancia
                     if ($distanciaARepartidor < $distanciaMinima) {
                         $distanciaMinima = $distanciaARepartidor;
                         $nodoAsignado = $repartidor;
                     }
                 } else {
-                    echo "El repartidor {$repartidor->nomina} no puede transportar el pedido $nodo debido a restricciones de volumen o dimensiones.<br>";
+                    // Explicación de por qué el repartidor no puede transportar el pedido
+                    $volumenDisponible = $repartidor->calcularVolumenDisponible();
+                    $volumenPaquete = $pedido->calcularVolumenPaquete();
+                    echo "El repartidor {$repartidor->nomina} no puede transportar {$pedido->pedido} debido a:<br>";
+                    
+                    if ($volumenPaquete > $volumenDisponible) {
+                        echo "- Insuficiente volumen disponible. Volumen requerido: {$volumenPaquete}, disponible: {$volumenDisponible}.<br>";
+                    }
+                    if ($pedido->largo_maximo > $repartidor->largo) {
+                        echo "- El largo del pedido ({$pedido->largo_maximo}) excede el límite del repartidor ({$repartidor->largo}).<br>";
+                    }
+                    if ($pedido->alto_maximo > $repartidor->alto) {
+                        echo "- La altura del pedido ({$pedido->alto_maximo}) excede el límite del repartidor ({$repartidor->alto}).<br>";
+                    }
+                    if ($pedido->ancho_maximo > $repartidor->ancho) {
+                        echo "- El ancho del pedido ({$pedido->ancho_maximo}) excede el límite del repartidor ({$repartidor->ancho}).<br>";
+                    }
+                    echo "<br>";
                 }
             }
     
             if ($nodoAsignado) {
-                $nodoAsignado->actualizarVolumenOcupado($volumenPedido);
-                echo "Pedido $nodo asignado a repartidor {$nodoAsignado->nomina}.<br><br>";
-                $nodosAsignados[$nodoAsignado->nomina][] = $nodo;
+                // Asigna el pedido al repartidor más cercano y actualiza su posición y volumen ocupado
+                $nodoAsignado->actualizarVolumenOcupado($pedido->calcularVolumenPaquete());
+                $nodoAsignado->latitud = $pedido->latitud;  // Actualizar posición
+                $nodoAsignado->longitud = $pedido->longitud; // Actualizar posición
+    
+                echo "Pedido {$pedido->pedido} asignado a repartidor {$nodoAsignado->nomina}.<br><br>";
+    
+                // Almacena el pedido en la lista de asignaciones para este repartidor
+                $nodosAsignados[$nodoAsignado->nomina][] = $pedido;
             } else {
-                echo "Pedido $nodo no pudo ser asignado a ningún repartidor.<br><br>";
+                echo "Pedido {$pedido->pedido} no pudo ser asignado a ningún repartidor.<br><br>";
             }
         }
     
         return $nodosAsignados;
     }
-    
-       
-
-    function obtenerCoordenadas($direccion) {
-        $direccionFormateada = urlencode($direccion);
-        $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$direccionFormateada}&key={$this->apiKey}";
-    
-        // Realizar la solicitud HTTP
-        $response = file_get_contents($url);
-        $data = json_decode($response, true);
-    
-        // Verificar que la solicitud fue exitosa
-        if ($data['status'] === 'OK') {
-            $coordenadas = $data['results'][0]['geometry']['location'];
-            return [
-                'latitud' => $coordenadas['lat'],
-                'longitud' => $coordenadas['lng']
-            ];
-        } else {
-            return null; // Manejo de errores en caso de fallo en la solicitud
-        }
-    }
-    
 
     public function calcularTiempoViaje($origenLat, $origenLng, $destinoLat, $destinoLng) {
         $url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={$origenLat},{$origenLng}&destinations={$destinoLat},{$destinoLng}&key={$this->apiKey}";
@@ -259,8 +223,6 @@ class Ordenamiento {
         return null;
     }
 
-
-
     // Método para obtener los pedidos en estado de "Entrega parcial" (prioritarios)
     public function obtenerPedidosEntregaParcial() {
         $sql = "SELECT NumVenta, Fecha FROM pedidos WHERE Estado = 'Entrega parcial' ORDER BY Fecha ASC";
@@ -273,21 +235,65 @@ class Ordenamiento {
         return $this->conexion->query($sql);
     }
 
-    // Método para seleccionar un repartidor disponible basado en criterios específicos
-    public function seleccionarRepartidor() {
-        $sql = "SELECT Nomina FROM repartidor WHERE Estado = 'Disponible' LIMIT 1";
-        $resultado = $this->conexion->query($sql);
-        $repartidor = $resultado->fetch_assoc();
-        return $repartidor ? $repartidor['Nomina'] : null;
+    // Método para verificar si hay suficientes recursos y luego crear un repartidor con vehículo asignado
+    public function crearRepartidorDisponible() {
+        // Verificar si hay repartidores disponibles
+        $sqlRepartidorCount = "SELECT COUNT(*) AS totalRepartidores FROM repartidor WHERE Estado = 'Disponible'";
+        $resultadoRepartidorCount = $this->conexion->query($sqlRepartidorCount);
+        $cantidadRepartidores = $resultadoRepartidorCount->fetch_assoc()['totalRepartidores'];
+
+        // Verificar si hay vehículos en circulación disponibles
+        $sqlVehiculoCount = "SELECT COUNT(*) AS totalVehiculos FROM vehiculo WHERE Estado = 'En circulación'";
+        $resultadoVehiculoCount = $this->conexion->query($sqlVehiculoCount);
+        $cantidadVehiculos = $resultadoVehiculoCount->fetch_assoc()['totalVehiculos'];
+
+        // Confirmar que haya al menos un repartidor y un vehículo disponibles
+        if ($cantidadRepartidores < 1) {
+            echo "No hay repartidores disponibles para asignar.<br>";
+            return null;
+        }
+        if ($cantidadVehiculos < 1) {
+            echo "No hay vehículos en circulación disponibles para asignar.<br>";
+            return null;
+        }
+
+        // Si hay recursos suficientes, proceder con la asignación
+        // Seleccionar el repartidor disponible de la base de datos
+        $sqlRepartidor = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado = 'Disponible' LIMIT 1";
+        $resultadoRepartidor = $this->conexion->query($sqlRepartidor);
+        $datosRepartidor = $resultadoRepartidor->fetch_assoc();
+
+        // Seleccionar el vehículo en circulación que mejor se ajuste a las necesidades
+        $sqlVehiculo = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado FROM vehiculo WHERE Estado = 'En circulación' ORDER BY Largo * Alto * Ancho DESC LIMIT 1";
+        $resultadoVehiculo = $this->conexion->query($sqlVehiculo);
+        $datosVehiculo = $resultadoVehiculo->fetch_assoc();
+
+        // Crear el objeto Repartidor con el vehículo asociado
+        $repartidor = new Repartidor(
+            $datosRepartidor['Nomina'],
+            $datosRepartidor['Nombre'] . " " . $datosRepartidor['Apellidos'],
+            $datosVehiculo['Largo'],
+            $datosVehiculo['Alto'],
+            $datosVehiculo['Ancho']
+        );
+
+        // Asignar propiedades adicionales del vehículo en el repartidor
+        $repartidor->vehiculo = [
+            'placa' => $datosVehiculo['Placa'],
+            'modelo' => $datosVehiculo['Modelo']
+        ];
+
+        echo "Repartidor {$datosRepartidor['Nombre']} con Nómina {$datosRepartidor['Nomina']} asignado al vehículo con Placa {$datosVehiculo['Placa']} ({$datosVehiculo['Modelo']}).<br>";
+
+        // Marcar el repartidor como ocupado en la base de datos
+        $sqlActualizarRepartidor = "UPDATE repartidor SET Estado = 'Ocupado' WHERE Nomina = '{$datosRepartidor['Nomina']}'";
+        $this->conexion->query($sqlActualizarRepartidor);
+
+        // Retornar el objeto repartidor con el vehículo asignado
+        return $repartidor;
     }
 
-    // Método para seleccionar un vehículo en circulación
-    public function seleccionarVehiculo() {
-        $sql = "SELECT Placa FROM vehiculo WHERE Estado = 'En circulación' LIMIT 1";
-        $resultado = $this->conexion->query($sql);
-        $vehiculo = $resultado->fetch_assoc();
-        return $vehiculo ? $vehiculo['Placa'] : null;
-    }
+
 
     // Método para asignar un pedido a un repartidor y actualizar el estado
     public function asignarPedidoARepartidor($pedido, $repartidor, $vehiculo) {

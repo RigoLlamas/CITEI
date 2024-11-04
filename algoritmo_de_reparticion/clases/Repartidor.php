@@ -10,6 +10,8 @@ class Repartidor {
     public $hora_limite;
     private $hora_inicio;
     public $es_foraneo;
+    public $latitud;   // Latitud actual del repartidor
+    public $longitud;  // Longitud actual del repartidor
 
     public function __construct($matricula, $nomina, $largo, $alto, $ancho, $hora_limite = '18:00', $es_foraneo = false) {
         $this->matricula = $matricula;
