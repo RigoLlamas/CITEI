@@ -2,7 +2,7 @@
 class Repartidor {
     public $matricula;
     public $nomina;
-    public $volumenOcupado;         // Volumen actualmente ocupado en el vehículo
+    public $volumenOcupado = 0; // Volumen actualmente ocupado en el vehículo
     public $largo;
     public $alto;
     public $ancho;
@@ -34,6 +34,12 @@ class Repartidor {
         return $this->calcularVolumenTotalVehiculo() - $this->volumenOcupado;
     }
 
+    // Actualiza el volumen ocupado del vehículo al asignar un pedido
+    public function actualizarVolumenOcupado($volumenPedido) {
+        $this->volumenOcupado += $volumenPedido;
+    }
+
+
     // Verifica si el pedido cumple con el volumen y dimensiones del vehículo
     public function puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido) {
         $volumenDisponible = $this->calcularVolumenDisponible();
@@ -42,13 +48,8 @@ class Repartidor {
         return $volumenAdecuado && $dimensionesAdecuadas;
     }
 
-    // Actualiza el volumen ocupado del vehículo al asignar un pedido
-    public function actualizarVolumenOcupado($volumenPedido) {
-        $this->volumenOcupado += $volumenPedido;
-    }
-
     // Método para agregar un pedido si cumple con el volumen, dimensiones y tiempo
-    public function agregarPedido($volumenPedido, $tiempoEstimado, $tiempoEntreNodos) {
+    public function agregarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido, $tiempoEstimado, $tiempoEntreNodos) {
         $tiempoConImprevistos = $tiempoEntreNodos + 10;
 
         // Agrega tiempo de comida si no es foráneo y aún no se ha agregado
@@ -57,7 +58,7 @@ class Repartidor {
         }
 
         // Verificar volumen y dimensiones antes de agregar
-        if (!$this->puedeTransportarPedido($volumenPedido, $this->largo, $this->alto, $this->ancho)) {
+        if (!$this->puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido)) {
             return false; // No se puede asignar debido a restricciones de volumen o dimensiones
         }
 
@@ -66,7 +67,7 @@ class Repartidor {
             return false; // No se puede asignar debido a restricciones de tiempo
         }
 
-        // Asignar el pedido y actualizar tiempo
+        // Asignar el pedido y actualizar tiempo y volumen ocupado
         $this->actualizarVolumenOcupado($volumenPedido);
         $this->actualizarTiempo($tiempoEstimado + $tiempoConImprevistos);
         return true;
@@ -93,5 +94,4 @@ class Repartidor {
         return $this->tiempo >= 60;
     }
 }
-?>
 
