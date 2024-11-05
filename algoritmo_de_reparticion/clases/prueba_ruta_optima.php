@@ -21,20 +21,15 @@ $pedidos = [
     new Pedido('pedido7', 'Lago de Chapala, Chapala', 'Chapala', 'Pendiente', 1.3, 1.0, 0.7),
     new Pedido('pedido8', 'Ajijic, Jalisco', 'Ajijic', 'Pendiente', 1.1, 0.9, 0.6),
     new Pedido('pedido9', 'Ciudad Guzmán, Jalisco', 'Ciudad Guzmán', 'Pendiente', 1.8, 1.4, 1.0),
-    new Pedido('pedido10', 'La Barca, Jalisco', 'La Barca', 'Pendiente', 1.4, 1.1, 0.7),
-    new Pedido('pedido11', 'Mazamitla, Jalisco', 'Mazamitla', 'Pendiente', 1.6, 1.3, 0.8),
-    new Pedido('pedido12', 'Ameca, Jalisco', 'Ameca', 'Pendiente', 1.2, 0.9, 0.7),
-    new Pedido('pedido13', 'Sayula, Jalisco', 'Sayula', 'Pendiente', 1.0, 0.8, 0.6)
-    // Agrega más pedidos según sea necesario
 ];
 
 // Definir los repartidores con sus dimensiones
 $repartidores = [
-    new Repartidor('Matricula 1', 'Nomina 1', 1, 1.5, 1.5), 
-    new Repartidor('Matricula 2', 'Nomina 2', 1, 1.5, 1.5)  
+    new Repartidor('Matricula 1', 'Nomina 1', 5, 4, 5), 
+    new Repartidor('Matricula 2', 'Nomina 2', 2, 1.5, 3)  
 ];
 
-// Simular la ubicación de la sede (si queremos descartar nodos cercanos a la sede)
+// Simular la ubicación de la sede
 $sede = [
     'latitud' => 20.676722, 
     'longitud' => -103.347447
@@ -47,6 +42,7 @@ foreach ($pedidos as $pedido) {
 }
 
 echo "<br>";
+
 // Asignar los nodos a los repartidores según la proximidad
 $nodosAsignados = $ordenamiento->asignarNodosARepartidores($pedidos, $repartidores, $sede);
 
@@ -66,17 +62,26 @@ foreach ($nodosAsignados as $nominaRepartidor => $nodosRepartidor) {
     // Crear un array temporal solo con los nodos asignados a este repartidor
     $nodosParaRepartidor = [];
     foreach ($nodosRepartidor as $nodo) {
-        $nodosParaRepartidor[$nodo->pedido] = ['latitud' => $nodo->latitud, 'longitud' => $nodo->longitud];
+        $nodosParaRepartidor[$nodo->pedido] = [
+            'latitud' => $nodo->latitud,
+            'longitud' => $nodo->longitud
+        ];
     }
 
     // Obtener la ruta óptima solo para los nodos asignados a este repartidor
-    $rutaOptima = $ordenamiento->generarRutaOptimaVecinoMasCercano($nodosParaRepartidor, array_keys($nodosParaRepartidor)[0]);
+    $inicio = array_key_first($nodosParaRepartidor);
+    if ($inicio) {
+        $rutaOptima = $ordenamiento->generarRutaOptimaVecinoMasCercano($nodosParaRepartidor, $inicio);
 
-    // Generar enlace de Google Maps para visualizar la ruta de este repartidor
-    $baseURL = "https://www.google.com/maps/dir/";
-    foreach ($rutaOptima as $nodoKey) {
-        $baseURL .= $nodosParaRepartidor[$nodoKey]['latitud'] . "," . $nodosParaRepartidor[$nodoKey]['longitud'] . "/";
+        // Generar enlace de Google Maps para visualizar la ruta de este repartidor
+        $baseURL = "https://www.google.com/maps/dir/" . $sede['latitud'] . "," . $sede['longitud'] . "/"; 
+
+        foreach ($rutaOptima as $nodoKey) {
+            $baseURL .= $nodosParaRepartidor[$nodoKey]['latitud'] . "," . $nodosParaRepartidor[$nodoKey]['longitud'] . "/";
+        }
+        echo $baseURL . "<br>";
+    } else {
+        echo "No hay nodos asignados para el repartidor $nominaRepartidor.<br>";
     }
-    echo $baseURL . "<br>";
 }
 ?>

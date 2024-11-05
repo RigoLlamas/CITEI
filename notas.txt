@@ -1,0 +1,32 @@
+Cantidad de pedidos y zona:
+
+RQF74 y RQF75: Asegúrate de que el sistema primero distinga entre pedidos dentro y fuera de la zona metropolitana. Esto es clave, ya que los pedidos fuera de esta zona deben asignarse a un único repartidor (RQNF96).
+Control de cantidad de pedidos y prioridad:
+
+RQF76 y RQF77: Implementa límites de pedidos asignados por día y prioriza aquellos con estatus de "Entrega parcial" o con mayor antigüedad.
+Distribución de pedidos equitativa:
+
+RQF78 y RQNF98: Verifica que los pedidos se distribuyan entre los repartidores disponibles de forma equitativa. Esto implica que no solo se asignen al repartidor más cercano, sino también que se respete un balance en la carga de trabajo.
+Capacidades del vehículo:
+
+RQF79, RQF80 y RQNF125: Asegúrate de calcular el espacio disponible en cada vehículo y comparar con el volumen de los pedidos. Si el volumen excede el del vehículo, el pedido no debe asignarse.
+Asignación y cálculo de rutas:
+
+RQF81 y RQNF112: Para la organización de rutas, usa el algoritmo de Dijkstra o un enfoque de vecino más cercano, iniciando siempre desde la sede.
+RQNF107, RQNF117 y RQNF118: Los pedidos más cercanos deben asignarse y añadirse a la ruta del repartidor, retirándose de la lista de pedidos pendientes.
+Cálculo de tiempos y horarios:
+
+RQNF110, RQNF115 y RQNF116: El tiempo del repartidor debe basarse en la hora actual de la sede, sumando el tiempo de tránsito entre nodos y 10 minutos adicionales por imprevistos. Además, debe añadirse una hora para el almuerzo, excepto si el repartidor está fuera de la zona metropolitana.
+Verificación de volumen y dimensiones de los paquetes:
+
+RQNF122, RQNF123, RQNF124 y RQNF125: Implementa una verificación de que el volumen de los pedidos no exceda el del vehículo. Además, establece límites para pedidos cuyas dimensiones (alto, largo, ancho) superen las medidas del vehículo.
+Para integrar estos requerimientos en tu código:
+
+En la función asignarNodosARepartidores:
+
+Ajusta la lógica para que considere la verificación de zona y establezca un solo repartidor para pedidos fuera de la zona metropolitana (RQNF96).
+Implementa una lógica de límite de pedidos diarios basada en la cantidad de repartidores y días de la semana restantes (RQNF97).
+Asegura la verificación de que los pedidos cumplen con las restricciones de volumen y dimensiones del vehículo.
+En la clase Repartidor:
+
+Añade métodos para actualizar el tiempo de comida y agregar imprevistos al tiempo calculado, lo cual es importante para RQNF116 y RQNF115.
