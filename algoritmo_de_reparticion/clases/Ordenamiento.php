@@ -168,7 +168,17 @@ class Ordenamiento {
 
 public function obtenerPedidosDesdeBD() {
     $pedidos = [];
-    $sqlPedidos = "SELECT NumVenta, Estado, FK_Usuario FROM pedidos WHERE Estado = 'En almacen'";
+    $sqlPedidos = "
+        SELECT NumVenta, Estado, FK_Usuario, Fecha 
+        FROM pedidos 
+        WHERE Estado IN ('Entrega parcial', 'En almacen') 
+        ORDER BY 
+            CASE 
+                WHEN Estado = 'Entrega parcial' THEN 1 
+                WHEN Estado = 'En almacen' THEN 2 
+            END, 
+            Fecha ASC
+    ";
     $resultadoPedidos = $this->conexion->query($sqlPedidos);
 
     if ($resultadoPedidos->num_rows > 0) {
@@ -177,10 +187,11 @@ public function obtenerPedidosDesdeBD() {
                 'NumVenta' => $filaPedido['NumVenta'],
                 'Estado' => $filaPedido['Estado'],
                 'FK_Usuario' => $filaPedido['FK_Usuario'],
+                'Fecha' => $filaPedido['Fecha'],
             ];
         }
     } else {
-        echo "No hay pedidos en almacen.<br>";
+        echo "No hay pedidos en estado de 'Entrega parcial' o 'En almacen'.<br>";
         return []; // Si no hay pedidos, retorna vacío para detener el proceso
     }
 
@@ -201,7 +212,8 @@ public function obtenerPedidosDesdeBD() {
             $datos['largo_maximo'],
             $datos['alto_maximo'],
             $datos['ancho_maximo'],
-            $datos['volumen_total'] // Pasar el volumen calculado
+            $datos['volumen_total'],
+            $datos['Fecha']
         );
     }
 

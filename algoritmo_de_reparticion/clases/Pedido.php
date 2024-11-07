@@ -10,10 +10,11 @@ class Pedido {
     public $largo_maximo;
     public $ancho_maximo;
     public $alto_maximo;
+    public $fecha;
     private $direccion;
     private $apiKey;
 
-    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total) {
+    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha) {
         $this->pedido = $pedido;
         $this->direccion = $direccion;
         $this->municipio = $municipio;
@@ -21,7 +22,8 @@ class Pedido {
         $this->largo_maximo = $largo_maximo;
         $this->ancho_maximo = $ancho_maximo;
         $this->alto_maximo = $alto_maximo;
-        $this->volumen_total = $volumen_total; // Volumen asignado directamente
+        $this->volumen_total = $volumen_total;
+        $this->fecha = $fecha;
 
         // Obtener la API key desde el archivo de configuración
         $config = include '../config.php';
