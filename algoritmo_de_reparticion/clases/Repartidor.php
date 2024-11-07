@@ -89,7 +89,6 @@ class Repartidor {
 
     // Verificar si el repartidor ya ha tenido tiempo de comida
     private function tieneTiempoDeComida() {
-        // Comprobar si el tiempo trabajado es mayor o igual a 4 horas (240 minutos) para añadir tiempo de comida
         $horasTrabajadas = $this->hora_inicio->diff($this->tiempo)->h;
         return $horasTrabajadas >= 4;
     }
