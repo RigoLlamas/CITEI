@@ -1,105 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algortimo de reparticion</title>
+</head>
+<body>
+    
+</body>
+</html>
+
 <?php
+
 // Incluir los archivos de conexión y funciones
 include_once '../php/conexion.php';
-include_once 'funciones_de_reparticion.php';
 include_once 'clases/Pedido.php';
 include_once 'clases/Ordenamiento.php';
-include_once 'clases/Nodo.php';
+include_once 'clases/Repartidor.php';
 
-// Proceso principal para la asignación de pedidos
-$total_pedidos = obtenerTotalPedidos($conexion);
-$dias_restantes = calcularDiasRestantes();
-$repartidores = obtenerRepartidoresDisponibles($conexion);
-$total_repartidores = count($repartidores);
+// Instanciar la clase Ordenamiento con la conexión existente
+$ordenamiento = new Ordenamiento($conexion);
 
-if ($dias_restantes > 0 && $total_repartidores > 0) {
-    $limite_pedidos_diarios = ceil($total_pedidos / $dias_restantes / $total_repartidores);
+// Obtener los pedidos desde la base de datos
+$pedidos = $ordenamiento->obtenerPedidosDesdeBD();
 
-    echo "<h3>Límite de pedidos por repartidor</h3>";
-    echo "<table border='1'>";
-    echo "<tr><th>Repartidor ID</th><th>Límite de pedidos por día</th></tr>";
-    foreach ($repartidores as $id_repartidor) {
-        echo "<tr><td>$id_repartidor</td><td>$limite_pedidos_diarios</td></tr>";
-    }
-    echo "</table><br>";
+echo "<pre>";
+print_r($pedidos);
+echo "</pre>";
 
-    $vehiculo_disponible = obtenerVehiculoDisponible($conexion);
-    if (!$vehiculo_disponible) {
-        die("No hay vehículos disponibles en circulación.");
-    }
-
-    // Instancia de la clase Ordenamiento
-    $ordenamiento = new Ordenamiento($conexion);
-
-    // Asignación de pedidos con "Entrega parcial" (prioritarios)
-    $pedidos_prioritarios = $ordenamiento->obtenerPedidosEntregaParcial();
-    while ($pedido = $pedidos_prioritarios->fetch_assoc()) {
-        $numVenta = $pedido['NumVenta'];
-        $repartidorId = $ordenamiento->seleccionarRepartidor();
-        $vehiculo = $ordenamiento->seleccionarVehiculo();
-
-        if ($repartidorId && $vehiculo) {
-            $ordenamiento->asignarPedidoARepartidor($numVenta, $repartidorId, $vehiculo);
-        }
-    }
-
-    // Asignación de pedidos con "Solicitado"
-    $pedidos_solicitados = $ordenamiento->obtenerPedidosSolicitados();
-    while ($pedido = $pedidos_solicitados->fetch_assoc()) {
-        $numVenta = $pedido['NumVenta'];
-        $repartidorId = $ordenamiento->seleccionarRepartidor();
-        $vehiculo = $ordenamiento->seleccionarVehiculo();
-
-        if ($repartidorId && $vehiculo) {
-            $ordenamiento->asignarPedidoARepartidor($numVenta, $repartidorId, $vehiculo);
-        }
-    }
-} else {
-    echo "No hay suficientes días o repartidores para distribuir los pedidos.";
+// Verificar si hay pedidos y repartidores; si no, detener el flujo
+if (empty($pedidos) || empty($repartidores)) {
+    echo "<h3>No hay pedidos o repartidores disponibles. Proceso detenido.</h3>";
+    $conexion->close();
+    exit();
 }
 
-// Mostrar las tablas de información
-function mostrarTabla($conexion, $sql, $titulo, $columnas) {
-    $resultado = $conexion->query($sql);
 
-    echo "<h2>$titulo</h2>";
-    echo "<table border='1' cellpadding='10' cellspacing='0'>";
-    echo "<tr>";
-    foreach ($columnas as $columna) {
-        echo "<th>$columna</th>";
+// Crear repartidores con vehículos asignados usando Ordenamiento
+$repartidores = $ordenamiento->crearRepartidoresDisponibles();
+
+// Definir la ubicación de la sede
+$sede = [
+    'latitud' => 20.676722,
+    'longitud' => -103.347447
+];
+
+// Asignar los pedidos a los repartidores y registrar los envíos en la base de datos
+$nodosAsignados = $ordenamiento->asignarNodosARepartidores($pedidos, $repartidores, $sede);
+
+// Verificar y mostrar los resultados
+echo "<h3>Resultados de la Asignación de Pedidos</h3>";
+foreach ($nodosAsignados as $nominaRepartidor => $pedidosAsignados) {
+    echo "<h4>Repartidor: {$nominaRepartidor}</h4>";
+    foreach ($pedidosAsignados as $pedido) {
+        echo "Pedido: {$pedido->pedido}, Coordenadas: ({$pedido->latitud}, {$pedido->longitud})<br>";
     }
-    echo "</tr>";
-
-    while ($fila = $resultado->fetch_assoc()) {
-        echo "<tr>";
-        foreach ($columnas as $columna) {
-            echo "<td>{$fila[$columna]}</td>";
-        }
-        echo "</tr>";
-    }
-
-    echo "</table><br>";
 }
 
-// Tabla de envíos
-$sql_envios = "SELECT OrdenR, Cantidad, Vehiculo, Producto, Repartidor, NumVenta FROM envios";
-$columnas_envios = ["OrdenR", "Cantidad", "Vehiculo", "Producto", "Repartidor", "NumVenta"];
-mostrarTabla($conexion, $sql_envios, "Tabla de Envíos", $columnas_envios);
+// Generar y mostrar rutas óptimas para cada repartidor asignado
+foreach ($nodosAsignados as $nominaRepartidor => $pedidosAsignados) {
+    echo "<h4>Ruta óptima para Repartidor {$nominaRepartidor}:</h4>";
+    
+    // Crear un array con las coordenadas de cada pedido para el repartidor actual
+    $coordenadasPedidos = [];
+    foreach ($pedidosAsignados as $pedido) {
+        $coordenadasPedidos[$pedido->pedido] = [
+            'latitud' => $pedido->latitud,
+            'longitud' => $pedido->longitud
+        ];
+    }
 
-// Tabla de pedidos
-$sql_pedidos = "SELECT NumVenta, Fecha, Estado, FK_Usuario FROM pedidos";
-$columnas_pedidos = ["NumVenta", "Fecha", "Estado", "FK_Usuario"];
-mostrarTabla($conexion, $sql_pedidos, "Tabla de Pedidos", $columnas_pedidos);
+    // Generar la ruta óptima usando el método vecino más cercano
+    $inicio = array_key_first($coordenadasPedidos);
+    if ($inicio) {
+        $rutaOptima = $ordenamiento->generarRutaOptimaVecinoMasCercano($coordenadasPedidos, $inicio);
 
-// Tabla de repartidores
-$sql_repartidores = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor";
-$columnas_repartidores = ["Nomina", "Nombre", "Apellidos", "Estado"];
-mostrarTabla($conexion, $sql_repartidores, "Tabla de Repartidores", $columnas_repartidores);
+        // Mostrar el enlace de Google Maps para visualizar la ruta
+        $baseURL = "https://www.google.com/maps/dir/";
+        foreach ($rutaOptima as $pedidoId) {
+            $baseURL .= $coordenadasPedidos[$pedidoId]['latitud'] . "," . $coordenadasPedidos[$pedidoId]['longitud'] . "/";
+        }
+        echo "<a href='{$baseURL}' target='_blank'>Ver ruta en Google Maps</a><br><br>";
+    } else {
+        echo "No hay pedidos asignados para el repartidor {$nominaRepartidor}.<br>";
+    }
+}
 
-// Tabla de vehículos
-$sql_vehiculos = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado FROM vehiculo";
-$columnas_vehiculos = ["Placa", "Largo", "Alto", "Ancho", "Modelo", "Estado"];
-mostrarTabla($conexion, $sql_vehiculos, "Tabla de Vehículos", $columnas_vehiculos);
-
+// Cerrar la conexión a la base de datos
 $conexion->close();
+
 ?>

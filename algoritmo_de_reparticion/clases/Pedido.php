@@ -1,10 +1,11 @@
 <?php
+
 class Pedido {
     public $pedido;
     public $longitud;
     public $latitud;
     public $municipio;
-    public $volumen_total;
+    public $volumen_total; // Asignado directamente desde la función obtenerPedidosDesdeBD
     public $estatus;
     public $largo_maximo;
     public $ancho_maximo;
@@ -12,7 +13,7 @@ class Pedido {
     private $direccion;
     private $apiKey;
 
-    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $ancho_maximo, $alto_maximo) {
+    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total) {
         $this->pedido = $pedido;
         $this->direccion = $direccion;
         $this->municipio = $municipio;
@@ -20,14 +21,18 @@ class Pedido {
         $this->largo_maximo = $largo_maximo;
         $this->ancho_maximo = $ancho_maximo;
         $this->alto_maximo = $alto_maximo;
-        $this->volumen_total = $this->calcularVolumenPaquete();
+        $this->volumen_total = $volumen_total; // Volumen asignado directamente
 
-        // Obtener la API key de configuración una sola vez
-        $config = include '../../config.php';
-        $this->apiKey = $config['api_keys']['google_maps_api_key'];
+        // Obtener la API key desde el archivo de configuración
+        $config = include '../config.php';
+        $this->apiKey = $config['api_keys']['google_maps_api_key'] ?? null;
 
-        // Obtener las coordenadas basado en la dirección
-        $this->obtenerCoordenadas();
+        // Verificar si la API key está disponible antes de realizar la petición
+        if ($this->apiKey) {
+            $this->obtenerCoordenadas();
+        } else {
+            echo "API key de Google Maps no encontrada.<br>";
+        }
     }
 
     private function obtenerCoordenadas() {
@@ -36,14 +41,13 @@ class Pedido {
 
         $response = @file_get_contents($url);
         if ($response === false) {
-            // Log error aquí si es posible
             echo "Error al intentar obtener datos de la API de Google Maps.<br>";
             return;
         }
 
         $data = json_decode($response, true);
 
-        if (isset($data['status']) && $data['status'] === 'OK') {
+        if (isset($data['status']) && $data['status'] === 'OK' && !empty($data['results'])) {
             $coordenadas = $data['results'][0]['geometry']['location'];
             $this->latitud = $coordenadas['lat'];
             $this->longitud = $coordenadas['lng'];
@@ -51,15 +55,6 @@ class Pedido {
             echo "No se pudieron obtener las coordenadas para la dirección: " . htmlspecialchars($this->direccion) . "<br>";
         }
     }
-
-    public function calcularVolumenPaquete() {
-        // Asegurar que todas las dimensiones sean numéricas antes de calcular el volumen
-        $largo = is_numeric($this->largo_maximo) ? $this->largo_maximo : 0;
-        $ancho = is_numeric($this->ancho_maximo) ? $this->ancho_maximo : 0;
-        $alto = is_numeric($this->alto_maximo) ? $this->alto_maximo : 0;
-    
-        return $largo * $ancho * $alto;
-    }
 }
-?>
 
+?>

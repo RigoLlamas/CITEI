@@ -10,9 +10,15 @@ $conexion = null; // Coloca aquí la conexión real si necesitas guardar resulta
 // Crear una instancia de la clase Ordenamiento
 $ordenamiento = new Ordenamiento($conexion);
 
+// Simular la ubicación de la sede
+$sede = [
+    'latitud' => 20.676722, 
+    'longitud' => -103.347447
+];
+
 // Simular un conjunto de nodos (direcciones de pedidos con coordenadas GPS)
 $pedidos = [
-    new Pedido('pedido1', 'Catedral de Guadalajara, Guadalajara', 'Guadalajara', 'Pendiente', 0.5, 0.5, 0.5),
+    new Pedido('pedido1', 'Catedral de Guadalajara, Guadalajara', 'Guadalajara', 'Pendiente',  0.1, 0.4, 0.5),
     new Pedido('pedido2', 'Museo Cabañas, Guadalajara', 'Guadalajara', 'Pendiente', 0.6, 0.4, 0.5),
     new Pedido('pedido3', 'Parque Revolución, Guadalajara', 'Guadalajara', 'Pendiente', 0.7, 0.6, 0.6),
     new Pedido('pedido4', 'Zapopan Centro, Zapopan', 'Zapopan', 'Pendiente', 1.0, 0.8, 0.6),
@@ -25,14 +31,8 @@ $pedidos = [
 
 // Definir los repartidores con sus dimensiones
 $repartidores = [
-    new Repartidor('Matricula 1', 'Nomina 1', 5, 4, 5), 
-    new Repartidor('Matricula 2', 'Nomina 2', 2, 1.5, 3)  
-];
-
-// Simular la ubicación de la sede
-$sede = [
-    'latitud' => 20.676722, 
-    'longitud' => -103.347447
+    new Repartidor('Matricula 1', 'Nomina 1', 1, 4, 5), 
+    new Repartidor('Matricula 2', 'Nomina 2', 1, 1.5, 3)  
 ];
 
 // Mostrar los pedidos antes de ordenarlos

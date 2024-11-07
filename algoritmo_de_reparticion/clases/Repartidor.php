@@ -6,12 +6,12 @@ class Repartidor {
     public $largo;
     public $alto;
     public $ancho;
-    public $tiempo;
-    public $hora_limite;
-    private $hora_inicio;
-    public $es_foraneo;
-    public $latitud;   // Latitud actual del repartidor
-    public $longitud;  // Longitud actual del repartidor
+    public $tiempo;             // Hora actual del repartidor
+    public $hora_limite;        // Hora límite de trabajo
+    private $hora_inicio;       // Hora de inicio de trabajo
+    public $es_foraneo;         // Indica si el repartidor es foráneo
+    public $latitud;            // Latitud actual del repartidor
+    public $longitud;           // Longitud actual del repartidor
 
     public function __construct($matricula, $nomina, $largo, $alto, $ancho, $hora_limite = '18:30', $es_foraneo = false) {
         $this->matricula = $matricula;
@@ -21,13 +21,12 @@ class Repartidor {
         $this->alto = $alto;
         $this->ancho = $ancho;
         $this->hora_limite = $hora_limite;
-        $this->tiempo = 0;
         $this->hora_inicio = new DateTime('09:00'); 
-        $this->tiempo = new DateTime('09:00');
+        $this->tiempo = clone $this->hora_inicio; // Hora actual del repartidor, inicia a las 09:00
         $this->es_foraneo = $es_foraneo;
     }
 
-    // Calcula el volumen total del vehículo basado en las dimensiones de la cabina
+    // Calcula el volumen total del vehículo basado en sus dimensiones
     public function calcularVolumenTotalVehiculo() {
         return $this->largo * $this->alto * $this->ancho;
     }
@@ -44,61 +43,55 @@ class Repartidor {
 
     // Verifica si el pedido cumple con el volumen y dimensiones del vehículo
     public function puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido) {
-        $volumenDisponible = $this->calcularVolumenDisponible();
-        $volumenAdecuado = $volumenPedido <= $volumenDisponible;
+        $volumenAdecuado = $volumenPedido <= $this->calcularVolumenDisponible();
         $dimensionesAdecuadas = $largoPedido <= $this->largo && $altoPedido <= $this->alto && $anchoPedido <= $this->ancho;
         return $volumenAdecuado && $dimensionesAdecuadas;
     }
 
     // Método para agregar un pedido si cumple con el volumen, dimensiones y tiempo
     public function agregarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido, $tiempoEstimado, $tiempoEntreNodos) {
-        $tiempoConImprevistos = $tiempoEntreNodos + 10;
+        $tiempoConImprevistos = $tiempoEstimado + $tiempoEntreNodos + 10; // Añade 10 minutos de imprevistos
 
-        // Agrega tiempo de comida si no es foráneo y aún no se ha agregado
+        // Agregar tiempo de comida si no es foráneo y aún no se ha añadido
         if (!$this->es_foraneo && !$this->tieneTiempoDeComida()) {
-            $this->tiempo += 60; // Añadir una hora para comida
+            $this->tiempo->modify('+60 minutes'); // Añadir una hora para la comida
             echo "Tiempo de comida añadido para el repartidor {$this->nomina}.<br>";
         }
 
         // Verificar volumen y dimensiones antes de agregar
         if (!$this->puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido)) {
             echo "El repartidor {$this->nomina} no puede transportar el pedido debido a restricciones de volumen o dimensiones.<br>";
-            return false; // No se puede asignar debido a restricciones de volumen o dimensiones
+            return false;
         }
 
+        // Crear una instancia temporal del tiempo estimado de fin del pedido
+        $horaEstimadaFin = clone $this->tiempo;
+        $horaEstimadaFin->modify("+{$tiempoConImprevistos} minutes");
+
         // Verificar si el repartidor puede trabajar hasta la hora límite
-        if (!$this->puedeTrabajarHasta($tiempoEstimado + $tiempoConImprevistos)) {
+        if (!$this->puedeTrabajarHasta($horaEstimadaFin)) {
             echo "El repartidor {$this->nomina} no puede trabajar hasta la hora límite con el pedido actual.<br>";
-            return false; // No se puede asignar debido a restricciones de tiempo
+            return false;
         }
 
         // Asignar el pedido y actualizar tiempo y volumen ocupado
         $this->actualizarVolumenOcupado($volumenPedido);
-        $this->actualizarTiempo($tiempoEstimado + $tiempoConImprevistos);
+        $this->tiempo = $horaEstimadaFin; // Actualizar el tiempo del repartidor con la nueva hora estimada
         echo "Pedido asignado al repartidor {$this->nomina}. Volumen ocupado actualizado: {$this->volumenOcupado}.<br>";
         return true;
     }
 
-    // Actualizar el tiempo total trabajado por el repartidor
-    public function actualizarTiempo($incremento) {
-        $this->tiempo += $incremento;
-    }
-
     // Verificar si el repartidor puede trabajar hasta una hora límite estimada
     public function puedeTrabajarHasta(DateTime $horaEstimadaFin) {
-        // Crear la hora límite como un DateTime fijo
-        $horaLimite = new DateTime($this->hora_limite);
-        
-        // Comparar si la hora de fin estimada es anterior o igual a la hora límite
-        return $horaEstimadaFin <= $horaLimite;
+        $horaLimite = new DateTime($this->hora_limite); // Convertir hora límite a DateTime
+        return $horaEstimadaFin <= $horaLimite; // Comparar la hora de fin estimada con la hora límite
     }
-    
-    
 
-        
     // Verificar si el repartidor ya ha tenido tiempo de comida
     private function tieneTiempoDeComida() {
-        return $this->tiempo >= 60;
+        // Comprobar si el tiempo trabajado es mayor o igual a 4 horas (240 minutos) para añadir tiempo de comida
+        $horasTrabajadas = $this->hora_inicio->diff($this->tiempo)->h;
+        return $horasTrabajadas >= 4;
     }
 
     // Actualizar la ubicación del repartidor después de asignar un pedido
