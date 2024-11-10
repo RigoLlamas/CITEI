@@ -125,10 +125,20 @@ class Ordenamiento {
         // Obtener todos los repartidores y vehículos disponibles
         $sqlRepartidores = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado = 'Disponible'";
         $resultadoRepartidores = $this->conexion->query($sqlRepartidores);
+    
+        if (!$resultadoRepartidores) {
+            echo "Error en la consulta de repartidores: " . $this->conexion->error . "<br>";
+            return $repartidores;
+        }
         
         $sqlVehiculos = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado FROM vehiculo WHERE Estado = 'En circulación'";
         $resultadoVehiculos = $this->conexion->query($sqlVehiculos);
-        
+    
+        if (!$resultadoVehiculos) {
+            echo "Error en la consulta de vehículos: " . $this->conexion->error . "<br>";
+            return $repartidores;
+        }
+    
         // Verificar que haya repartidores y vehículos disponibles
         if ($resultadoRepartidores->num_rows == 0) {
             echo "No hay repartidores disponibles para asignar.<br>";
@@ -144,7 +154,7 @@ class Ordenamiento {
         $esForaneoAsignado = false;
     
         // Crear repartidores con vehículos asignados mientras haya ambos recursos disponibles
-        while ($repartidorData = $resultadoRepartidores->fetch_assoc() && $vehiculoData = $resultadoVehiculos->fetch_assoc()) {
+        while (($repartidorData = $resultadoRepartidores->fetch_assoc()) && ($vehiculoData = $resultadoVehiculos->fetch_assoc())) {
             // Si aún no se ha asignado un repartidor foráneo y hay más de uno, hacer al primer candidato foráneo
             $esForaneo = !$esForaneoAsignado && $resultadoRepartidores->num_rows > 1;
             
@@ -164,11 +174,17 @@ class Ordenamiento {
     
             // Marcar el repartidor como ocupado en la base de datos
             $sqlActualizarRepartidor = "UPDATE repartidor SET Estado = 'Ocupado' WHERE Nomina = '{$repartidorData['Nomina']}'";
-            $this->conexion->query($sqlActualizarRepartidor);
+            if (!$this->conexion->query($sqlActualizarRepartidor)) {
+                echo "Error al actualizar el estado del repartidor {$repartidorData['Nomina']}: " . $this->conexion->error . "<br>";
+                continue;
+            }
     
             // Marcar el vehículo como asignado en la base de datos
             $sqlActualizarVehiculo = "UPDATE vehiculo SET Estado = 'Asignado' WHERE Placa = '{$vehiculoData['Placa']}'";
-            $this->conexion->query($sqlActualizarVehiculo);
+            if (!$this->conexion->query($sqlActualizarVehiculo)) {
+                echo "Error al actualizar el estado del vehículo {$vehiculoData['Placa']}: " . $this->conexion->error . "<br>";
+                continue;
+            }
     
             // Añadir el repartidor al arreglo de repartidores disponibles
             $repartidores[] = $repartidor;
@@ -176,6 +192,7 @@ class Ordenamiento {
     
         return $repartidores;
     }
+    
     
     
 
@@ -298,6 +315,7 @@ private function agregarDetallesAPedido($pedido) {
         return $pedido;
     }
 
+    
     // Asigna pedidos a los repartidores disponibles y registra cada asignación en la base de datos
     public function asignarNodosARepartidores($pedidos, $repartidores, $sede) {
         $nodosAsignados = [];

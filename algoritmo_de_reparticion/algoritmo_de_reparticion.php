@@ -24,6 +24,9 @@ $ordenamiento = new Ordenamiento($conexion);
 // Obtener los pedidos desde la base de datos
 $pedidos = $ordenamiento->obtenerPedidosDesdeBD();
 
+// Crear repartidores con vehículos asignados usando Ordenamiento
+$repartidores = $ordenamiento->crearRepartidoresDisponibles();
+
 echo "<pre>";
 print_r($pedidos);
 echo "</pre>";
@@ -36,8 +39,7 @@ if (empty($pedidos) || empty($repartidores)) {
 }
 
 
-// Crear repartidores con vehículos asignados usando Ordenamiento
-$repartidores = $ordenamiento->crearRepartidoresDisponibles();
+
 
 // Definir la ubicación de la sede
 $sede = [
