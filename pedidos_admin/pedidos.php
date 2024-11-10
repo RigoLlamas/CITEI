@@ -70,7 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
     <title>Gestión de Pedidos - Administrador</title>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
-    <script src="pedidos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    
 </head>
 <body>
     <div class="dos-columnas-envios">
@@ -161,13 +163,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
                 <div class="historial-pedidos-scroll">
                     <?php foreach ($historialPedidos as $pedido): ?>
                         <div class="pedido_historial">
-                            <p><strong>NumVenta:</strong> <?php echo $pedido['NumVenta']; ?></p>
-                            <p><strong>Fecha:</strong> <?php echo $pedido['Fecha']; ?></p>
-                            <p><strong>Estado:</strong> <?php echo $pedido['Estado']; ?></p>
-                            <p><strong>Total:</strong> $<?php echo $pedido['Total']; ?></p>
-                            <p><strong>Código:</strong> <?php echo $pedido['Codigo']; ?></p>
-                            <p><strong>Clave:</strong> <?php echo $pedido['Clave']; ?></p>
-                            <hr>
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                                <tr>
+                                    <td><strong>NumVenta:</strong></td>
+                                    <td><?php echo $pedido['NumVenta']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha:</strong></td>
+                                    <td><?php echo $pedido['Fecha']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        <select name="estado_<?php echo $pedido['NumVenta']; ?>" onchange="actualizarEstado(<?php echo $pedido['NumVenta']; ?>, this.value)">
+                                            <option value="Pendiente" <?php echo $pedido['Estado'] == 'Pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                            <option value="En almacen" <?php echo $pedido['Estado'] == 'En almacen' ? 'selected' : ''; ?>>En almacen</option>
+                                            <option value="Entrega parcial" <?php echo $pedido['Estado'] == 'Entrega parcial' ? 'selected' : ''; ?>>Entrega parcial</option>
+                                            <option value="Cancelado" <?php echo $pedido['Estado'] == 'Cancelado' ? 'selected' : ''; ?>>Cancelado</option>
+                                            <option value="Completado" <?php echo $pedido['Estado'] == 'Completado' ? 'selected' : ''; ?>>Completado</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total:</strong></td>
+                                    <td>$<?php echo $pedido['Total']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Código:</strong></td>
+                                    <td><?php echo $pedido['Codigo']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Clave:</strong></td>
+                                    <td><?php echo $pedido['Clave']; ?></td>
+                                </tr>
+                            </table>
+                            <hr style="border: 1px solid #ddd;">
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -176,5 +206,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
             <p>No se encontraron pedidos con los filtros aplicados.</p>
         <?php endif; ?>
     </div>
+    <script>
+        function actualizarEstado(numVenta, nuevoEstado) {
+            // Alerta de confirmación
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¿Deseas cambiar el estado del pedido?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Si el usuario confirma, realizar la solicitud fetch
+                    fetch('actualizar_estado.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ numVenta, nuevoEstado })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Estado actualizado',
+                                text: data.message,
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message,
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error en la solicitud',
+                            text: 'No se pudo actualizar el estado del pedido.',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            });
+        }
+    </script>
 </body>
 </html>
