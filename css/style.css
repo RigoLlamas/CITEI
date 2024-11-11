@@ -1343,7 +1343,6 @@ gmp-map {
 /* Fila Inferior: Mapa */
 .fila-mapa {
     flex: 1;
-    background-color: var(--azul_claro);
     padding: 10px;
     display: flex;
     align-items: center;

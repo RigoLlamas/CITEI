@@ -3,7 +3,7 @@ session_start();
 $isAdmin = isset($_SESSION['id_usuario']) && $_SESSION['id_usuario'] == '1';
 
 $config = include '../config.php';
-$googleMapsApiKey = $config['api_keys']['google_maps'];
+$googleMapsApiKey = $config['api_keys']['google_maps_api_key'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -35,7 +35,6 @@ $googleMapsApiKey = $config['api_keys']['google_maps'];
         function saveChanges() {
             const contactanos = document.getElementById('contactanosText').innerText;
 
-            // Validar longitud del texto (máximo 500 caracteres)
             if (contactanos.length > 500) {
                 alert('El texto no puede tener más de 500 caracteres.');
                 return;

@@ -1,12 +1,19 @@
 <?php
-// Incluye el archivo de conexión a la base de datos
 include '../php/conexion.php';
+$config = include '../config.php';
+$googleMapsApiKey = $config['api_keys']['google_maps_api_key'];
 
 // Obtén la nómina del repartidor desde la URL o una variable predefinida
 $nominaRepartidor = isset($_GET['nomina']) ? intval($_GET['nomina']) : 0;
 
 // Consulta para obtener los repartidores ocupados
-$consultaRepartidores = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado = 'Ocupado'";
+$consultaRepartidores = "
+    SELECT Nomina, Nombre, Apellidos, Estado, 
+           ST_X(Ubicacion) AS Longitud, 
+           ST_Y(Ubicacion) AS Latitud 
+    FROM repartidor 
+    WHERE Estado = 'Ocupado'
+";
 $resultadoRepartidores = $conexion->query($consultaRepartidores);
 
 // Consulta para obtener los envíos asignados al repartidor específico
@@ -48,7 +55,36 @@ $conexion->close();
     <title>CITEI - Rutas</title>
     <script src="../js/pie.js" defer></script>
     <script src="../js/navbar.js" defer></script>
-    <link rel="stylesheet" href="ruta-a-tu-archivo.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo $googleMapsApiKey; ?>&callback=initMap" async defer></script>
+    <script>
+        let map;
+        let marker;
+
+        // Inicializa el mapa con un marcador en las coordenadas predeterminadas
+        function initMap() {
+            const defaultLocation = { lat: 20.673290, lng: -103.416747 }; // Coordenadas predeterminadas
+            map = new google.maps.Map(document.getElementById("mapa"), {
+                center: defaultLocation,
+                zoom: 16,
+            });
+
+            // Crear un marcador en la ubicación predeterminada
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                title: "Mi ubicación inicial" // Título del marcador
+            });
+        }
+
+        // Función para actualizar la ubicación del marcador en el mapa
+        function updateMarker(lat, lng, title) {
+            const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            marker.setPosition(position);
+            marker.setTitle(title);
+            map.setCenter(position); // Centra el mapa en el repartidor seleccionado
+            map.setZoom(16); // Ajusta el nivel de zoom al seleccionar un repartidor
+        }
+    </script>
 </head>
 <body>
     <div class="rutas-contenedor">
@@ -100,9 +136,8 @@ $conexion->close();
             
             <!-- Fila Inferior: Mapa -->
             <div class="fila-mapa cuadro">
-                <h3>Mapa</h3>
-                <div id="mapa">
-                    <!-- Espacio reservado para el mapa -->
+                <div id="mapa" style="width: 100%; height: 100%;">
+                    <!-- Google Maps se mostrará aquí -->
                 </div>
             </div>
         </div>
