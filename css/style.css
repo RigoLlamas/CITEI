@@ -1101,8 +1101,8 @@ gmp-map {
 .lista-productos {
     display: flex;
     flex-direction: column;
-    gap: 2rem; /* Separación entre productos */
-    max-height: 60vh; /* Limitar la altura con scroll */
+    gap: 2rem; 
+    max-height: 60vh; 
     overflow-y: auto;
 }
 
@@ -1285,3 +1285,67 @@ gmp-map {
     margin-bottom: 20px;
 }
 
+/* Rutas */
+.rutas-contenedor {
+    display: flex;
+    height: 70vh;
+    gap: 10px;
+    padding: 20px;
+    background-color: var(--fondo);
+    color: var(--negro);
+}
+
+/* Columna Izquierda */
+.columna-izquierda {
+    width: 25%;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+/* Quitar formato de los enlaces en la lista de repartidores */
+.columna-izquierda a {
+    color: inherit; /* Hereda el color del elemento padre */
+    text-decoration: none; /* Quita el subrayado */
+    font-size: 1.8rem;
+}
+
+.columna-izquierda a:hover {
+    text-decoration: underline; /* Opcional: subraya el enlace al pasar el ratón */
+}
+
+
+#lista-repartidores {
+    list-style-type: none;
+    padding: 0;
+}
+
+#lista-repartidores li {
+    padding: 8px;
+    border-bottom: 1px solid var(--azul_fuerte);
+}
+
+/* Columna Derecha */
+.columna-derecha {
+    width: 75%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Fila Superior: Lista de Envíos */
+.fila-envios {
+    flex: 1;
+    background-color: var(--blanco);
+    padding: 10px;
+    overflow-y: auto;
+}
+
+/* Fila Inferior: Mapa */
+.fila-mapa {
+    flex: 1;
+    background-color: var(--azul_claro);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
