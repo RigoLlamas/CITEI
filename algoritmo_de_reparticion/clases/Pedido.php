@@ -13,8 +13,9 @@ class Pedido {
     public $fecha;
     private $direccion;
     private $apiKey;
+    public $cantidad;
 
-    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha) {
+    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha, $cantidad) {
         $this->pedido = $pedido;
         $this->direccion = $direccion;
         $this->municipio = $municipio;
@@ -24,6 +25,7 @@ class Pedido {
         $this->alto_maximo = $alto_maximo;
         $this->volumen_total = $volumen_total;
         $this->fecha = $fecha;
+        $this->cantidad = $cantidad;
 
         // Obtener la API key desde el archivo de configuración
         $config = include '../config.php';
@@ -35,6 +37,10 @@ class Pedido {
         } else {
             echo "API key de Google Maps no encontrada.<br>";
         }
+    }
+
+    public function getCantidad() {
+        return $this->cantidad;
     }
 
     private function obtenerCoordenadas() {
