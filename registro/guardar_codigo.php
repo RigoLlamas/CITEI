@@ -1,10 +1,15 @@
 <?php
 session_start();
 
-if (isset($_POST['codigo_verificacion'])) {
-    $_SESSION['codigo_verificacion'] = $_POST['codigo_verificacion'];
-    echo json_encode(['status' => 'success']);
+// Leer el cuerpo JSON de la solicitud
+$rawData = file_get_contents("php://input");
+$data = json_decode($rawData, true);
+
+// Verificar si el código de verificación fue proporcionado
+if (isset($data['codigo_verificacion'])) {
+    $_SESSION['codigo_verificacion'] = $data['codigo_verificacion'];
+    echo json_encode(['success' => true]);
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Código no recibido']);
+    echo json_encode(['error' => 'Código de verificación no proporcionado']);
 }
 ?>

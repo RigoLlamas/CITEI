@@ -1,4 +1,5 @@
 <?php
+session_start();
 include '../php/conexion.php';
 
 $query = "SELECT PK_Municipio, Municipio FROM municipio";

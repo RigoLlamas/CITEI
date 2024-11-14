@@ -1,18 +1,23 @@
 <?php
 session_start();
 
+print_r($_SESSION); // Remove or comment this in production
+
 // Incluir la conexión a la base de datos
 include '../php/conexion.php';
 
-// Simula el código que fue enviado por correo (en un caso real lo guardarías en $_SESSION o base de datos)
-$codigo_enviado = $_SESSION['codigo_verificacion']; // Código guardado previamente
-
+if (isset($_SESSION['codigo_verificacion'])) {
+    $codigo_enviado = $_SESSION['codigo_verificacion'];
+} else {
+    // Handle the missing verification code scenario, e.g., redirect or show an error
+    echo "Código de verificación no encontrado. Por favor, vuelva a enviar el formulario.";
+    exit();
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $codigo_ingresado = $_POST['clave'];
 
     if ($codigo_ingresado == $codigo_enviado) {
-        // Preparar los datos desde la sesión
         $nombre = trim($_SESSION['nombre']);
         $apellidos = trim($_SESSION['apellidos']);
         $email = trim($_SESSION['email']);
@@ -24,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $codigo_postal = trim($_SESSION['codigo_postal']);
         $num_interior = trim($_SESSION['num_interior']);
         $num_exterior = trim($_SESSION['num_exterior']);
-        $notificacion = trim($_SESSION['notificacion']);
+        $notificacion = isset($_SESSION['notificacion']) && $_SESSION['notificacion'] !== '' ? (int)$_SESSION['notificacion'] : 0;
 
         $sql = "INSERT INTO usuarios (FK_Municipio, Nombres, Apellidos, Empresa, Calle, Correo, Clave, Telefono, NumInterior, NumExterior, Notificaciones, CP)
         VALUES ('$municipio', '$nombre', '$apellidos', '$empresa', '$calle', '$email', '$contrasena', '$numero', '$num_interior', '$num_exterior','$notificacion', '$codigo_postal')";
