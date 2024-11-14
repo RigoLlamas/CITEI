@@ -1,6 +1,6 @@
 <?php
-// Incluir la conexión a la base de datos
 include('../php/conexion.php');
+require '../php/notificacion.php';
 
 // Verificar que la solicitud es POST y que se enviaron los datos necesarios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,24 +18,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("si", $nuevoEstado, $numVenta);
 
         if ($stmt->execute()) {
-            // Enviar respuesta de éxito
             echo json_encode(["success" => true, "message" => "Estado actualizado correctamente."]);
+
+            // Consulta para obtener el correo y el campo de notificación del usuario asociado a la venta
+            $consultaCorreo = "SELECT u.Correo, u.Notificaciones 
+                               FROM usuarios u 
+                               JOIN pedidos p ON u.PK_Usuario = p.FK_Usuario 
+                               WHERE p.NumVenta = ?";
+            $stmtCorreo = $conexion->prepare($consultaCorreo);
+            $stmtCorreo->bind_param("i", $numVenta);
+            $stmtCorreo->execute();
+            $stmtCorreo->bind_result($correoDestino, $notificaciones);
+
+            if ($stmtCorreo->fetch()) {
+                // Verificar si el usuario tiene habilitadas las notificaciones
+                if ($notificaciones) {
+                    // Enviar notificación al correo del usuario
+                    $mensaje = "El estado de tu pedido #$numVenta ha sido actualizado a: $nuevoEstado.";
+                    if (!enviarCorreoNotificacion($correoDestino, $mensaje)) {
+                        echo json_encode(["success" => false, "message" => "Error al enviar el correo."]);
+                    }
+                } else {
+                    echo json_encode(["success" => true, "message" => "Estado actualizado, pero el usuario tiene las notificaciones deshabilitadas."]);
+                }
+            } else {
+                echo json_encode(["success" => false, "message" => "No se encontró el correo del usuario."]);
+            }
+
+            // Cerrar la declaración de correo
+            $stmtCorreo->close();
         } else {
             // Enviar respuesta de error
             echo json_encode(["success" => false, "message" => "Error al actualizar el estado en la base de datos."]);
         }
-
-        // Cerrar la declaración
         $stmt->close();
     } else {
         // Respuesta si faltan datos
         echo json_encode(["success" => false, "message" => "Faltan datos para actualizar el estado."]);
     }
-
-    // Cerrar la conexión
     $conexion->close();
 } else {
-    // Enviar respuesta de error si no es una solicitud POST
     echo json_encode(["success" => false, "message" => "Solicitud inválida."]);
 }
 ?>
