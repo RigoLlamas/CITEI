@@ -82,6 +82,34 @@ class Ordenamiento {
 
     // Función para asignar un pedido al repartidor y registrar en la base de datos
     private function registrarEnvio($pedido, $repartidor, $vehiculo) {
+        $numVenta = $pedido->pedido;
+    
+        // Consulta para obtener el Producto asociado al pedido
+        $sqlProducto = "SELECT Producto, Cantidad FROM detalles WHERE NumVenta = ?";
+        $stmtProducto = $this->conexion->prepare($sqlProducto);
+        if (!$stmtProducto) {
+            echo "Error en la preparación de la consulta para obtener el producto: " . $this->conexion->error . "<br>";
+            return false;
+        }
+        
+        $stmtProducto->bind_param("i", $numVenta);
+        $stmtProducto->execute();
+        $resultadoProducto = $stmtProducto->get_result();
+    
+        if ($resultadoProducto->num_rows > 0) {
+            $filaProducto = $resultadoProducto->fetch_assoc();
+            $producto = $filaProducto['Producto'];
+            $cantidad = $filaProducto['Cantidad'];
+        } else {
+            echo "No se encontró producto para el pedido {$numVenta}.<br>";
+            $stmtProducto->close();
+            return false;
+        }
+    
+        // Cerrar la consulta de producto
+        $stmtProducto->close();
+    
+        // Inserción en la tabla de envíos
         $sql = "INSERT INTO envios (OrdenR, Cantidad, Vehiculo, Producto, Repartidor, NumVenta) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $this->conexion->prepare($sql);   
         if (!$stmt) {
@@ -89,35 +117,28 @@ class Ordenamiento {
             return false;
         }
     
-        $ordenRuta = 1;
-        $cantidad = $pedido->getCantidad();
-        $stmt->bind_param("iisiii", $ordenRuta, $pedido->cantidad, $vehiculo, $pedido->producto, $repartidor->nomina, $pedido->numVenta);
+        $ordenRuta = 1; // Puedes personalizar este valor si tienes una lógica específica
+    
+        // Asignar los valores correctos a bind_param
+        $stmt->bind_param("iisiii", $ordenRuta, $cantidad, $vehiculo, $producto, $repartidor->nomina, $numVenta);
     
         if ($stmt->execute()) {
-            echo "Registro en la base de datos del pedido {$pedido->pedido} completado.<br>";
-            return $this->actualizarEstadoPedido($pedido->numVenta, 'En camino');
+            echo "Registro en la base de datos del pedido {$numVenta} completado.<br>";
+    
+            // Actualizar el estado del pedido a 'En camino'
+            if ($this->actualizarEstadoPedido($numVenta, 'En camino')) {
+                echo "Estado del pedido {$numVenta} actualizado a 'En camino'.<br>";
+            } else {
+                echo "Error al actualizar el estado del pedido {$numVenta}.<br>";
+            }
+    
+            return true;
         } else {
-            echo "Error al insertar el pedido {$pedido->pedido} en la tabla de envíos: " . $stmt->error . "<br>";
+            echo "Error al insertar el pedido {$numVenta} en la tabla de envíos: " . $stmt->error . "<br>";
             return false;
         }
-    }    
-
-    // Método privado para actualizar el estado del pedido
-    private function actualizarEstadoPedido($numVenta, $estado) {
-        $sql_actualizar = "UPDATE pedidos SET Estado = ? WHERE NumVenta = ?";
-        $stmt = $this->conexion->prepare($sql_actualizar);
-        
-        if (!$stmt) {
-            echo "Error en la preparación de la actualización del estado: " . $this->conexion->error . "<br>";
-            return false;
-        }
-        
-        $stmt->bind_param("si", $estado, $numVenta);
-        $resultado = $stmt->execute();
-        $stmt->close();
-        
-        return $resultado;
     }
+    
 
     // Método para verificar y crear un repartidor con vehículo asignado
     public function crearRepartidoresDisponibles() {
@@ -486,7 +507,23 @@ private function agregarDetallesAPedido($pedido) {
         return $limitePorRepartidor;
     }
      
+    // Método para actualizar el estado del pedido
+    private function actualizarEstadoPedido($numVenta, $estado) {
+    $sql_actualizar = "UPDATE pedidos SET Estado = ? WHERE NumVenta = ?";
+    $stmt = $this->conexion->prepare($sql_actualizar);
     
+    if (!$stmt) {
+        echo "Error en la preparación de la actualización del estado: " . $this->conexion->error . "<br>";
+        return false;
+    }
+    
+    $stmt->bind_param("si", $estado, $numVenta);
+    $resultado = $stmt->execute();
+    $stmt->close();
+    
+    return $resultado; // Retorna true si la actualización fue exitosa, false en caso contrario
+}
+
 }
 ?>
 
