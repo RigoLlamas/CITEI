@@ -1,9 +1,8 @@
 <?php
-// Conectar a la base de datos
-include '../../php/conexion.php'; // Asegúrate de tener la conexión a la base de datos
-
-// Iniciar sesión (asegurarse de que la sesión esté activa para obtener el ID del usuario)
 session_start();
+
+// Conectar a la base de datos
+include '../../php/conexion.php';
 
 // Verificar que los datos fueron enviados mediante POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

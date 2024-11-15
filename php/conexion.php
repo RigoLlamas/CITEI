@@ -1,6 +1,6 @@
 <?php
 
-    $config = include '../config.php';
+    $config = include $_SERVER['DOCUMENT_ROOT'] . '/CITEI/config.php';
 
     // Obtener detalles de conexión a la base de datos desde config.php
     $servername = $config['database']['host'];
