@@ -16,22 +16,40 @@ document.getElementById("loginForm").addEventListener("submit", function (event)
         method: "POST",
         body: formData
     })
-        .then(response => response.text())
-        .then(data => {
-            return JSON.parse(data);
-        })
-        .then(data => {
-            if (data.success) {
+    .then(response => response.text())
+    .then(data => {
+        return JSON.parse(data);
+    })
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: "¡Bienvenido!",
+                text: "Inicio de sesión exitoso. Redirigiendo...",
+                icon: "success",
+                timer: 1000,
+                showConfirmButton: false
+            }).then(() => {
                 window.location.href = "../productos/productos.php";
-            } else {
-                errorMessage.style.display = "block";
-                correoInput.value = ""
-                correoInput.setAttribute('placeholder', 'Datos incorrectos')
-                claveInput.value = ""
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
+            });
+        } else {
+            Swal.fire({
+                title: "Error",
+                text: "Datos incorrectos. Inténtalo de nuevo.",
+                icon: "error",
+                confirmButtonText: "Aceptar"
+            }).then(() => {
+                correoInput.value = "";
+                claveInput.value = "";
+            });
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        Swal.fire({
+            title: "Error",
+            text: "Ocurrió un error al procesar la solicitud. Inténtalo más tarde.",
+            icon: "error",
+            confirmButtonText: "Aceptar"
         });
-
+    });
 });

@@ -22,6 +22,7 @@ if (!$result) {
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
     <script src="registro.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>

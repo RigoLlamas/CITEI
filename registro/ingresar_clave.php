@@ -78,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             document.getElementById('clave').placeholder = "Clave incorrecta, intenta de nuevo";
         <?php endif; ?>
     </script>
+    
 </body>
 
 </html>
