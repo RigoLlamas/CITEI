@@ -42,19 +42,11 @@ function enviarCorreoNotificacion($correoDestino, $mensaje) {
     curl_close($ch);
 
     if ($error) {
-        echo "Error al enviar el correo: $error";
+        error_log("Error al enviar el correo: $error"); // Registrar el error en el log
         return false; // Retorna falso en caso de error
     } else {
-        echo "Correo enviado exitosamente: $response";
+        error_log("Correo enviado exitosamente: $response"); // Registrar éxito en el log
         return true; // Retorna verdadero si el correo fue enviado con éxito
     }
 }
-
-// Ejemplo de uso de la función
-$correoDestino = 'cliente@ejemplo.com';
-$nombreCliente = 'Cliente Ejemplo';
-$estatusNuevo = 'Enviado'; // Nuevo estatus del pedido
-$numPedido = 12345;
-
-enviarCorreoCambioEstatus($correoDestino, $nombreCliente, $estatusNuevo, $numPedido);
 ?>

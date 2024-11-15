@@ -226,33 +226,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ numVenta, nuevoEstado })
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Estado actualizado',
-                                text: data.message,
-                                confirmButtonText: 'OK'
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message,
-                                confirmButtonText: 'OK'
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error en la solicitud',
-                            text: 'No se pudo actualizar el estado del pedido.',
-                            confirmButtonText: 'OK'
-                        });
-                    });
+                    .then(response => response.text())
+.then(text => {
+    try {
+        const data = JSON.parse(text);
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Estado actualizado',
+                text: data.message,
+                confirmButtonText: 'OK'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message,
+                confirmButtonText: 'OK'
+            });
+        }
+    } catch (error) {
+        console.error('Error al parsear JSON:', error, 'Respuesta recibida:', text);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error en la solicitud',
+            text: 'Respuesta no válida del servidor.',
+            confirmButtonText: 'OK'
+        });
+    }
+})
+.catch(error => {
+    console.error('Error en la solicitud:', error);
+    Swal.fire({
+        icon: 'error',
+        title: 'Error en la solicitud',
+        text: 'No se pudo actualizar el estado del pedido.',
+        confirmButtonText: 'OK'
+    });
+});
+
                 }
             });
         }
