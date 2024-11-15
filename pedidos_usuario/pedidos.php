@@ -11,8 +11,8 @@ if (isset($_SESSION['id_usuario'])) {
     exit();
 }
 
-// Consulta para obtener los pedidos del usuario logueado
-$query = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado 
+// Consulta para obtener los pedidos del usuario logueado junto con Clave y Codigo
+$query = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Clave, pedidos.Codigo
           FROM pedidos
           WHERE pedidos.FK_Usuario = ?
           ORDER BY pedidos.Fecha ASC";
@@ -50,8 +50,24 @@ if ($result->num_rows > 0) {
             <?php foreach ($pedidos as $pedido): ?>
                 <div class="cuadro">
                     <h2>Pedido Número: <?php echo $pedido['NumVenta']; ?></h2>
-                    <p><strong>Fecha del Pedido:</strong> <?php echo $pedido['Fecha']; ?></p>
-                    <p><strong>Estado del Pedido:</strong> <?php echo $pedido['Estado']; ?></p>
+                    <table>
+                        <tr>
+                            <td><strong>Fecha del Pedido:</strong></td>
+                            <td><?php echo $pedido['Fecha']; ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Estado del Pedido:</strong></td>
+                            <td><?php echo $pedido['Estado']; ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Clave del Pedido:</strong></td>
+                            <td><?php echo $pedido['Clave']; ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Código del Pedido:</strong></td>
+                            <td><?php echo $pedido['Codigo']; ?></td>
+                        </tr>
+                    </table>
                     
                     <?php
                         // Obtener los detalles del pedido actual
