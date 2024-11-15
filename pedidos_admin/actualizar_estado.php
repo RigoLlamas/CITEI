@@ -1,6 +1,5 @@
 <?php
 include('../php/conexion.php');
-require '../php/notificacion.php';
 
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -23,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             $response = ["success" => true, "message" => "Estado actualizado correctamente."];
 
+            // Obtener el correo del usuario y las notificaciones
             $consultaCorreo = "SELECT u.Correo, u.Notificaciones 
                                FROM usuarios u 
                                JOIN pedidos p ON u.PK_Usuario = p.FK_Usuario 
@@ -33,16 +33,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtCorreo->bind_result($correoDestino, $notificaciones);
 
             if ($stmtCorreo->fetch()) {
-                if ($notificaciones) {
+                if ($notificaciones && !empty($correoDestino)) {
+                    // Si el usuario tiene notificaciones habilitadas y tiene un correo válido
                     $mensaje = "El estado de tu pedido #$numVenta ha sido actualizado a: $nuevoEstado.";
-                    if (!enviarCorreoNotificacion($correoDestino, $mensaje)) {
-                        $response = ["success" => false, "message" => "Error al enviar el correo."];
-                    }
+                    $response['email'] = [
+                        "correoDestino" => $correoDestino,
+                        "mensaje" => $mensaje
+                    ];
                 } else {
-                    $response["message"] .= " El usuario tiene las notificaciones deshabilitadas.";
+                    // Si las notificaciones están deshabilitadas o el correo está vacío
+                    $response["message"] .= " El usuario tiene las notificaciones deshabilitadas o la dirección de correo está vacía.";
                 }
             } else {
-                $response = ["success" => false, "message" => "No se encontró el correo del usuario."];
+                $response["message"] = "No se encontró el correo del usuario asociado al pedido.";
             }
             $stmtCorreo->close();
         } else {
@@ -55,6 +58,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conexion->close();
 }
 
-// Hacer un solo echo al final con la respuesta acumulada
 echo json_encode($response);
 ?>

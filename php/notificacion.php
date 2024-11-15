@@ -9,7 +9,7 @@ function enviarCorreoNotificacion($correoDestino, $mensaje) {
     // Obtener configuración de EmailJS desde config.php
     global $config;
     $service_id = $config['email_service']['service_id'];
-    $template_id = $config['email_service']['template_message'];
+    $template_id = $config['email_service']['template_id'];
     $user_id = $config['email_service']['user_id'];
 
     // Datos a enviar
@@ -23,30 +23,34 @@ function enviarCorreoNotificacion($correoDestino, $mensaje) {
         )
     );
 
-    // Opciones de la solicitud cURL
+    // Configuración del contexto de la solicitud
     $options = array(
-        CURLOPT_URL => $url,
-        CURLOPT_POST => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
-        CURLOPT_POSTFIELDS => json_encode($data)
+        'http' => array(
+            'header'  => "Content-Type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'timeout' => 10
+        )
     );
+    $context  = stream_context_create($options);
 
-    // Inicializar y ejecutar cURL
-    $ch = curl_init();
-    curl_setopt_array($ch, $options);
-    $response = curl_exec($ch);
-    $error = curl_error($ch);
+    // Ejecutar la solicitud
+    $result = file_get_contents($url, false, $context);
 
-    // Cerrar la conexión cURL
-    curl_close($ch);
+    // Manejo de errores
+    if ($result === FALSE) {
+        error_log("Error al enviar el correo");
+        return false;
+    }
 
-    if ($error) {
-        error_log("Error al enviar el correo: $error"); // Registrar el error en el log
-        return false; // Retorna falso en caso de error
+    $response_data = json_decode($result, true);
+    if (isset($response_data['status']) && $response_data['status'] === 'OK') {
+        error_log("Correo enviado exitosamente: " . print_r($response_data, true));
+        return true;
     } else {
-        error_log("Correo enviado exitosamente: $response"); // Registrar éxito en el log
-        return true; // Retorna verdadero si el correo fue enviado con éxito
+        error_log("Error en la respuesta de EmailJS: " . print_r($response_data, true));
+        return false;
     }
 }
 ?>
+

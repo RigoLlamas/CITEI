@@ -1,66 +1,66 @@
 <?php
-// Conexión a la base de datos
-include('../php/conexion.php');
+    // Conexión a la base de datos
+    include('../php/conexion.php');
 
-// Función para obtener el historial de pedidos por año, mes o día
-function obtenerHistorialPedidos($conexion, $filtro = []) {
-    $consulta = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Codigo, pedidos.Clave, 
-                        usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.Telefono, 
-                        SUM(detalles.Cantidad * detalles.Precio) AS Total 
-                 FROM pedidos
-                 JOIN usuarios ON pedidos.FK_Usuario = usuarios.PK_Usuario
-                 JOIN detalles ON pedidos.NumVenta = detalles.NumVenta
-                 WHERE 1=1";
+    // Función para obtener el historial de pedidos por año, mes o día
+    function obtenerHistorialPedidos($conexion, $filtro = []) {
+        $consulta = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Codigo, pedidos.Clave, 
+                            usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.Telefono, 
+                            SUM(detalles.Cantidad * detalles.Precio) AS Total 
+                    FROM pedidos
+                    JOIN usuarios ON pedidos.FK_Usuario = usuarios.PK_Usuario
+                    JOIN detalles ON pedidos.NumVenta = detalles.NumVenta
+                    WHERE 1=1";
 
-    // Agregar filtros de año, mes, día si están presentes
-    if (!empty($filtro['anio'])) {
-        $consulta .= " AND YEAR(pedidos.Fecha) = " . intval($filtro['anio']);
+        // Agregar filtros de año, mes, día si están presentes
+        if (!empty($filtro['anio'])) {
+            $consulta .= " AND YEAR(pedidos.Fecha) = " . intval($filtro['anio']);
+        }
+        if (!empty($filtro['mes'])) {
+            $consulta .= " AND MONTH(pedidos.Fecha) = " . intval($filtro['mes']);
+        }
+        if (!empty($filtro['dia'])) {
+            $consulta .= " AND DAY(pedidos.Fecha) = " . intval($filtro['dia']);
+        }
+
+        $consulta .= " GROUP BY pedidos.NumVenta ORDER BY pedidos.Fecha DESC";
+
+        $resultado = $conexion->query($consulta);
+        return $resultado->fetch_all(MYSQLI_ASSOC);
     }
-    if (!empty($filtro['mes'])) {
-        $consulta .= " AND MONTH(pedidos.Fecha) = " . intval($filtro['mes']);
+
+    // Función para obtener detalles de un pedido específico por código y clave
+    function obtenerDetallesPedido($conexion, $codigo, $clave) {
+        $consulta = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Codigo, pedidos.Clave,
+                            usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.Telefono,
+                            producto.Nombre AS Producto, detalles.Cantidad, detalles.Precio
+                    FROM pedidos
+                    JOIN usuarios ON pedidos.FK_Usuario = usuarios.PK_Usuario
+                    JOIN detalles ON pedidos.NumVenta = detalles.NumVenta
+                    JOIN producto ON detalles.Producto = producto.PK_Producto
+                    WHERE pedidos.Codigo = ? AND pedidos.Clave = ?";
+
+        $stmt = $conexion->prepare($consulta);
+        $stmt->bind_param("ss", $codigo, $clave);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+        return $resultado->fetch_all(MYSQLI_ASSOC);
     }
-    if (!empty($filtro['dia'])) {
-        $consulta .= " AND DAY(pedidos.Fecha) = " . intval($filtro['dia']);
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['textclave'])) {
+        // Si el administrador ingresó código y clave
+        $codigo = $_POST['textcodigo'];
+        $clave = $_POST['textclave'];
+        $detallesPedido = obtenerDetallesPedido($conexion, $codigo, $clave);
+    } else {
+        // Historial de pedidos por año, mes o día
+        $filtro = [
+            'anio' => $_GET['anio'] ?? null,
+            'mes' => $_GET['mes'] ?? null,
+            'dia' => $_GET['dia'] ?? null
+        ];
+        $historialPedidos = obtenerHistorialPedidos($conexion, $filtro);
     }
-
-    $consulta .= " GROUP BY pedidos.NumVenta ORDER BY pedidos.Fecha DESC";
-
-    $resultado = $conexion->query($consulta);
-    return $resultado->fetch_all(MYSQLI_ASSOC);
-}
-
-// Función para obtener detalles de un pedido específico por código y clave
-function obtenerDetallesPedido($conexion, $codigo, $clave) {
-    $consulta = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Codigo, pedidos.Clave,
-                        usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.Telefono,
-                        producto.Nombre AS Producto, detalles.Cantidad, detalles.Precio
-                 FROM pedidos
-                 JOIN usuarios ON pedidos.FK_Usuario = usuarios.PK_Usuario
-                 JOIN detalles ON pedidos.NumVenta = detalles.NumVenta
-                 JOIN producto ON detalles.Producto = producto.PK_Producto
-                 WHERE pedidos.Codigo = ? AND pedidos.Clave = ?";
-
-    $stmt = $conexion->prepare($consulta);
-    $stmt->bind_param("ss", $codigo, $clave);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    return $resultado->fetch_all(MYSQLI_ASSOC);
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['textclave'])) {
-    // Si el administrador ingresó código y clave
-    $codigo = $_POST['textcodigo'];
-    $clave = $_POST['textclave'];
-    $detallesPedido = obtenerDetallesPedido($conexion, $codigo, $clave);
-} else {
-    // Historial de pedidos por año, mes o día
-    $filtro = [
-        'anio' => $_GET['anio'] ?? null,
-        'mes' => $_GET['mes'] ?? null,
-        'dia' => $_GET['dia'] ?? null
-    ];
-    $historialPedidos = obtenerHistorialPedidos($conexion, $filtro);
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -71,8 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+</script>
+    <script src="../js/notificaciones.js"></script> 
 </head>
 <body>
     <div class="dos-columnas-envios">
@@ -207,67 +209,81 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
         <?php endif; ?>
     </div>
     <script>
-        function actualizarEstado(numVenta, nuevoEstado) {
-            // Alerta de confirmación
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "¿Deseas cambiar el estado del pedido?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, cambiar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Si el usuario confirma, realizar la solicitud fetch
-                    fetch('actualizar_estado.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ numVenta, nuevoEstado })
-                    })
-                    .then(response => response.text())
-.then(text => {
-    try {
-        const data = JSON.parse(text);
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Estado actualizado',
-                text: data.message,
-                confirmButtonText: 'OK'
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message,
-                confirmButtonText: 'OK'
-            });
-        }
-    } catch (error) {
-        console.error('Error al parsear JSON:', error, 'Respuesta recibida:', text);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error en la solicitud',
-            text: 'Respuesta no válida del servidor.',
-            confirmButtonText: 'OK'
-        });
-    }
-})
-.catch(error => {
-    console.error('Error en la solicitud:', error);
+    function actualizarEstado(numVenta, nuevoEstado) {
+    // Alerta de confirmación
     Swal.fire({
-        icon: 'error',
-        title: 'Error en la solicitud',
-        text: 'No se pudo actualizar el estado del pedido.',
-        confirmButtonText: 'OK'
-    });
-});
+        title: '¿Estás seguro?',
+        text: "¿Deseas cambiar el estado del pedido?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, cambiar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Realizar la solicitud fetch a actualizar_estado.php
+            fetch('actualizar_estado.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ numVenta, nuevoEstado })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Respuesta completa de actualizar_estado.php:", data); // Verifica toda la respuesta
 
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Estado actualizado',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    });
+
+                    // Verificar si hay información de correo en la respuesta
+                    if (data.email && data.email.correoDestino) {
+                        // Llamar a enviarCorreoNotificacion solo si correoDestino no está vacío
+                        enviarCorreoNotificacion(data.email.correoDestino, data.email.mensaje)
+                            .then(response => {
+                                if (!response.success) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error al enviar el correo',
+                                        text: 'El estado fue actualizado, pero hubo un error al enviar el correo.',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al enviar el correo',
+                            text: 'No se pudo enviar el correo porque la dirección de correo está vacía.',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    });
                 }
+            })
+            .catch(error => {
+                console.error('Error en la solicitud:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error en la solicitud',
+                    text: 'No se pudo actualizar el estado del pedido.',
+                    confirmButtonText: 'OK'
+                });
             });
         }
+    });
+}
+
     </script>
 </body>
 </html>
