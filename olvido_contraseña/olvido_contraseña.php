@@ -3,47 +3,52 @@ session_start();
 include '../php/conexion.php'; 
 include '../php/verificar_existencia.php'; 
 
+
+
 // Procesar el formulario solo si es una solicitud POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    header('Content-Type: application/json');
-
-    // Inicializa una respuesta por defecto
     $response = array("status" => "error", "message" => "Correo no válido");
+    header('Content-Type: application/json');
+    try {
+        // Obtener y decodificar los datos JSON
+        $data = json_decode(file_get_contents("php://input"), true);
 
-    if (isset($_POST['correo'])) {
-        $email = $_POST['correo'];
+        if (isset($data['correo'])) {
+            $email = $data['correo'];
 
-        // Validar si el correo tiene un formato válido
-        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $sql = "SELECT * FROM usuarios WHERE Correo = ?";
-            $stmt = $conexion->prepare($sql);
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $resultado = $stmt->get_result();
+            // Validar si el correo tiene un formato válido
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $sql = "SELECT * FROM usuarios WHERE Correo = ?";
+                $stmt = $conexion->prepare($sql);
+                $stmt->bind_param("s", $email);
+                $stmt->execute();
+                $resultado = $stmt->get_result();
 
-            if ($resultado->num_rows > 0) {
-                // Guardar el correo en la sesión
-                $_SESSION['correo'] = $email;
+                if ($resultado->num_rows > 0) {
+                    // Guardar el correo en la sesión
+                    $_SESSION['correo'] = $email;
 
-                // Devolver una respuesta exitosa
-                $response['status'] = "success";
-                $response['message'] = "Correo válido";
+                    $response['status'] = "success";
+                    $response['message'] = "Correo válido";
+                } else {
+                    $response['message'] = "Correo no encontrado";
+                }
             } else {
-                $response['message'] = "Correo no encontrado";
+                $response['message'] = "Correo con formato inválido";
             }
         } else {
-            $response['message'] = "Correo con formato inválido";
+            $response['message'] = "Campo de correo no enviado";
         }
-    } else {
-        $response['message'] = "Campo de correo no enviado";
+    } catch (Exception $e) {
+        $response['message'] = "Error interno del servidor";
+        error_log($e->getMessage());
     }
 
-    // Enviar la respuesta en formato JSON
     echo json_encode($response);
-    exit(); // Termina el script inmediatamente después de enviar la respuesta JSON
+    exit();
 }
-
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -51,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CITEI - Olvide mi contraseña</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
 </head>
@@ -68,6 +72,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </form>
     </div>
-    <script src="correo.js"></script> <!-- JavaScript manejará el envío -->
+    <script src="correo.js"></script>
 </body>
 </html>

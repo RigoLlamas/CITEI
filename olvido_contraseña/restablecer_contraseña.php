@@ -4,9 +4,10 @@ include '../php/conexion.php';
 
 // Variable para manejar errores de validación
 $errorClave = "";
+$successClave = "";
 
 if (!isset($_SESSION['correo'])) {
-    header("Location: olvido_contraseña.php");
+    header("Location: olvido_contraseña.php?error=no_sesion");
     exit();
 }
 
@@ -17,26 +18,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Verificar que ambas claves coincidan
         if ($nuevaClave === $confirmarClave) {
-                $claveEncriptada = $nuevaClave; //password_hash($nuevaClave, PASSWORD_DEFAULT);
-                $correoUsuario = $_SESSION['correo'];
+            // Validar contraseña segura
+            if (strlen($nuevaClave) >= 8 && preg_match('/[A-Za-z]/', $nuevaClave) && preg_match('/[0-9]/', $nuevaClave)) {
+                try {
+                    $correoUsuario = $_SESSION['correo'];
 
-                // Actualizar la contraseña en la base de datos
-                $sql = "UPDATE usuarios SET Clave = ? WHERE Correo = ?";
-                $stmt = $conexion->prepare($sql);
-                $stmt->bind_param("ss", $claveEncriptada, $correoUsuario);
-                if ($stmt->execute()) {
-                    session_destroy();
-                    header("Location: ../login/login.html");
-                    exit();
-                } else {
-                    $errorClave = "Hubo un error al actualizar la contraseña.";
+                    // Actualizar la contraseña en la base de datos
+                    $sql = "UPDATE usuarios SET Clave = ? WHERE Correo = ?";
+                    $stmt = $conexion->prepare($sql);
+                    $stmt->bind_param("ss", $nuevaClave, $correoUsuario);
+
+                    if ($stmt->execute()) {
+                        $successClave = "¡Contraseña actualizada correctamente!";
+                        session_destroy();
+                    } else {
+                        $errorClave = "Hubo un error al actualizar la contraseña.";
+                    }
+                    $stmt->close();
+                } catch (Exception $e) {
+                    $errorClave = "Error del servidor: " . $e->getMessage();
                 }
-
+            } else {
+                $errorClave = "La contraseña debe tener al menos 8 caracteres, incluir letras y números.";
+            }
         } else {
             $errorClave = "Las contraseñas no coinciden.";
         }
     }
 }
+
+$conexion->close();
 ?>
 
 <!DOCTYPE html>
@@ -45,9 +56,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CITEI - Restablecer contraseña</title>
+    <!-- Incluye los scripts adicionales -->
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div class="login__contenedor">
@@ -55,15 +67,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="login__datos" style="margin-bottom: 5.84rem;">
                 <label for="nueva_clave">Nueva contraseña</label>
                 <input id="nueva_clave" type="password" name="nueva_clave" 
-                minlength="5" maxlength="50"
+                minlength="8" maxlength="50"
                 placeholder="Ingrese su nueva contraseña"
+                autocomplete="new-password"
                 required>
             </div>
             <div class="login__datos" style="margin-bottom: 5.84rem;">
                 <label for="confirmar_clave">Confirmar contraseña</label>
                 <input id="confirmar_clave" type="password" name="confirmar_clave" 
-                minlength="5" maxlength="50"
+                minlength="8" maxlength="50"
                 placeholder="Confirme su nueva contraseña"
+                autocomplete="new-password"
                 required>
             </div>
             <div class="login__botones">
@@ -73,14 +87,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <script>
-        $(document).ready(function () {
-            // Mostrar el mensaje de error desde el servidor en el cliente
+        document.addEventListener("DOMContentLoaded", function () {
             <?php if (!empty($errorClave)): ?>
-                $('#nueva_clave').val('');
-                $('#confirmar_clave').val('');
-                $('#nueva_clave').attr('placeholder', '<?php echo $errorClave; ?>');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: <?php echo json_encode($errorClave); ?>, // Escapar correctamente el texto
+                    confirmButtonText: 'Aceptar'
+                });
+            <?php endif; ?>
+
+            <?php if (!empty($successClave)): ?>
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: <?php echo json_encode($successClave); ?>, // Escapar correctamente el texto
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    window.location.href = '../login/login.html';
+                });
             <?php endif; ?>
         });
     </script>
+
 </body>
 </html>

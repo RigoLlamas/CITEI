@@ -81,8 +81,8 @@ $conexion->close();
             const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
             marker.setPosition(position);
             marker.setTitle(title);
-            map.setCenter(position); // Centra el mapa en el repartidor seleccionado
-            map.setZoom(16); // Ajusta el nivel de zoom al seleccionar un repartidor
+            map.setCenter(position);
+            map.setZoom(16);
         }
 
         // Función para obtener las coordenadas actualizadas del repartidor

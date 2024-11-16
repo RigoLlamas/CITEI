@@ -3,10 +3,16 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault(); // Evita el envío por defecto del formulario
 
         const emailUsuario = document.getElementById('correo').value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        // Verificar si el campo de correo no está vacío
+        // Validar si el correo no está vacío y tiene un formato válido
         if (emailUsuario === '') {
             console.log("El campo de correo está vacío.");
+            return;
+        }
+
+        if (!emailRegex.test(emailUsuario)) {
+            console.log("El formato del correo es inválido.");
             return;
         }
 
@@ -18,7 +24,12 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify({ correo: emailUsuario })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(response => {
             if (response.status === "success") {
                 console.log("Correo válido. Continuando con el envío...");
@@ -29,8 +40,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Obtener configuraciones para EmailJS
                 fetch('../php/obtener_email_config.php')
-                    .then(response => response.json())
+                    .then(configResponse => {
+                        if (!configResponse.ok) {
+                            throw new Error(`Error al obtener configuración: ${configResponse.statusText}`);
+                        }
+                        return configResponse.json();
+                    })
                     .then(config => {
+                        if (!config.service_id || !config.template_code || !config.user_id) {
+                            throw new Error("Faltan datos en la configuración.");
+                        }
+
                         // Preparar datos para enviar el correo con EmailJS
                         const data = {
                             service_id: config.service_id,
@@ -68,8 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .catch(error => {
-            console.log('Error en la validación del correo:', error);
+            console.error('Error en la validación del correo:', error);
         });
     });
 });
-
