@@ -41,7 +41,6 @@ if ($resultadoEnvios && $resultadoEnvios->num_rows > 0) {
     }
 }
 
-// Libera los resultados y cierra la conexión
 $resultadoRepartidores->free();
 $resultadoEnvios->free();
 $conexion->close();
@@ -59,6 +58,7 @@ $conexion->close();
     <script>
         let map;
         let marker;
+        let intervalId;
 
         // Inicializa el mapa con un marcador en las coordenadas predeterminadas
         function initMap() {
@@ -84,6 +84,41 @@ $conexion->close();
             map.setCenter(position); // Centra el mapa en el repartidor seleccionado
             map.setZoom(16); // Ajusta el nivel de zoom al seleccionar un repartidor
         }
+
+        // Función para obtener las coordenadas actualizadas del repartidor
+        function fetchUpdatedCoordinates(nomina) {
+            fetch(`actualizar_coordenadas.php?nomina=${nomina}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        console.log(`Coordenadas actuales del repartidor ${nomina}: Latitud: ${data.Latitud}, Longitud: ${data.Longitud}`);
+                        updateMarker(data.Latitud, data.Longitud, `Repartidor ${nomina}`);
+                    } else {
+                        console.error(data.error);
+                    }
+                })
+                .catch(error => console.error('Error al obtener coordenadas:', error));
+        }
+
+        // Configura el intervalo para actualizar la ubicación cada X tiempo
+        function startUpdatingCoordinates(nomina, interval = 5000) {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(() => fetchUpdatedCoordinates(nomina), interval);
+        }
+
+        // Detiene la actualización de coordenadas
+        function stopUpdatingCoordinates() {
+            if (intervalId) clearInterval(intervalId);
+        }
+
+        // Llamada inicial al cargar el repartidor seleccionado
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const nomina = urlParams.get('nomina');
+            if (nomina) {
+                startUpdatingCoordinates(nomina);
+            }
+        });
     </script>
 </head>
 <body>

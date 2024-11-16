@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <div class="user-options" id="user-options">
                                 <a href="../vehiculos/gestionar_vehiculos.php">Vehiculos</a>
                                 <a href="../repartidores/gestionar_repartidores.php">Repartidores</a>
-                                <a href="#ruta">Rutas</a>
+                                <a href="../rutas/rutas.php">Rutas</a>
                                 <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
                             </div>
                         </div>
