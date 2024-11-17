@@ -248,10 +248,11 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                     echo "<li>";
                     echo "Producto: " . $oferta['ProductoNombre'] . " - Tipo: " . $oferta['Tipo'] . " (" . $oferta['Valor'] . ") Despliegue: " . $oferta['Despliegue'] . " Expiración: " . $oferta['Expiracion'];
                     // Botones para modificar, desplegar y eliminar
+                    echo "<div>";
                     echo " <a href='modificar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Modificar</a> | ";
                     echo "<a href='desplegar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Desplegar</a> | ";
                     echo "<a href='bajar_oferta.php?oferta=" . $oferta['Oferta'] . "' class='confirmar-accion'>Eliminar</a>";
-
+                    echo "</div>";
                     echo "</li>";
                 }
             } else {
