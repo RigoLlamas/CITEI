@@ -28,7 +28,7 @@ if (isset($_GET['oferta'])) {
 
         if (mysqli_stmt_execute($stmt_eliminar_oferta)) {
             echo "Oferta eliminada correctamente.";
-            header('Location: gestionar_promociones.php');
+            header('Location: gestionar_promociones.php?success=true');
             exit();
         } else {
             echo "Error al eliminar la oferta: " . mysqli_error($conexion);

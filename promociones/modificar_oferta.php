@@ -25,28 +25,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $valor_oferta = (float)$_POST['valor'];
     $despliegue = trim($conexion->real_escape_string($_POST['despliegue']));
     $expiracion = trim($conexion->real_escape_string($_POST['expiracion']));
-    $producto = $_POST['producto'] === 'NULL' ? 'NULL' : (int)$_POST['producto'];
 
-    // Actualizar la oferta en la base de datos
-    $sql_update = "UPDATE ofertas 
-                   SET Tipo = ?, Valor = ?, Despliegue = ?, Expiracion = ?, Producto = ?
-                   WHERE Oferta = ?";
-    $stmt_update = mysqli_prepare($conexion, $sql_update);
-    mysqli_stmt_bind_param($stmt_update, 'sdssii', $tipo_oferta, $valor_oferta, $despliegue, $expiracion, $producto, $oferta_id);
-
-    if (mysqli_stmt_execute($stmt_update)) {
-        header('Location: ../promociones/gestionar_promociones.php');
+    // Validar los valores ingresados (puedes agregar más validaciones)
+    if ($tipo_oferta === 'Canjeable' && ($valor_oferta < 1 || $valor_oferta > 1000)) {
+        $error = "El valor para 'Canjeable' debe estar entre 1 y 1000.";
+    } elseif ($tipo_oferta === 'Porcentual' && ($valor_oferta < 1 || $valor_oferta > 100)) {
+        $error = "El valor para 'Porcentual' debe estar entre 1 y 100.";
     } else {
-        echo "Error al modificar la oferta: " . mysqli_error($conexion);
+        // Actualizar la oferta en la base de datos
+        $sql_update = "UPDATE ofertas 
+                       SET Tipo = ?, Valor = ?, Despliegue = ?, Expiracion = ?
+                       WHERE Oferta = ?";
+        $stmt_update = mysqli_prepare($conexion, $sql_update);
+        mysqli_stmt_bind_param($stmt_update, 'sdssi', $tipo_oferta, $valor_oferta, $despliegue, $expiracion, $oferta_id);
+
+        if (mysqli_stmt_execute($stmt_update)) {
+            header('Location: gestionar_promociones.php?success=true');
+            exit;
+        } else {
+            $error = "Error al modificar la oferta: " . mysqli_error($conexion);
+        }
+
+        mysqli_stmt_close($stmt_update);
     }
-
-    mysqli_stmt_close($stmt_update);
 }
-
-// Obtener la lista de productos
-$sql_productos = "SELECT PK_Producto, Nombre FROM producto WHERE Visibilidad = 1";
-$result_productos = mysqli_query($conexion, $sql_productos);
-
 mysqli_close($conexion);
 ?>
 
@@ -56,50 +58,100 @@ mysqli_close($conexion);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modificar Oferta</title>
+    <script src="../js/pie.js" defer></script>
+    <script src="../js/navbar.js" defer></script>
+    <script src="promociones.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/sweetalert.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectCanjeablePorcentual = document.getElementById('canjeable_porcentual');
+        const valorInput = document.getElementById('valor');
+
+        // Función para ajustar el valor máximo del input "valor"
+        function ajustarValorMaximo() {
+            let maxValue = 0;
+            if (selectCanjeablePorcentual.value === 'Canjeable') {
+                maxValue = 1000;
+            } else if (selectCanjeablePorcentual.value === 'Porcentual') {
+                maxValue = 100;
+            }
+
+            // Actualiza el límite máximo y valida el valor actual
+            valorInput.oninput = function () {
+                let value = parseFloat(valorInput.value);
+                if (value < 1) valorInput.value = 1;
+                if (value > maxValue) valorInput.value = maxValue;
+            };
+
+            // Validar el valor actual en caso de que ya exceda el máximo
+            let currentValue = parseFloat(valorInput.value);
+            if (currentValue > maxValue) {
+                valorInput.value = maxValue;
+            }
+        }
+
+        // Inicializar la función al cargar la página
+        ajustarValorMaximo();
+
+        // Agregar evento al cambiar el select
+        selectCanjeablePorcentual.addEventListener('change', ajustarValorMaximo);
+    });
+    </script>
 </head>
 <body>
 
+<?php
+if (isset($error)) {
+    echo "<script>
+        Swal.fire({
+            title: 'Error',
+            text: '$error',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+    </script>";
+}
+?>
+
 <h2>Modificar Oferta</h2>
+<div class="contenedor-producto cuadro">
+    <form action="modificar_oferta.php?oferta=<?php echo $oferta_id; ?>" method="POST">
 
-<form action="modificar_oferta.php?oferta=<?php echo $oferta_id; ?>" method="POST">
-    <div>
-        <label for="canjeable_porcentual">Tipo de oferta:</label>
-        <select id="canjeable_porcentual" name="canjeable_porcentual">
-            <option value="canjeable" <?php echo $oferta['Tipo'] == 'canjeable' ? 'selected' : ''; ?>>Canjeable</option>
-            <option value="porcentual" <?php echo $oferta['Tipo'] == 'porcentual' ? 'selected' : ''; ?>>Porcentual</option>
-        </select>
-    </div>
+        <!-- Selección de tipo de oferta -->
+        <div style="display: flex; flex-direction: row; margin-top: 20px;">
+            <div style="width: 40%;">
+                <p style="text-align: left;" for="canjeable_porcentual">Tipo de oferta:</p>
+                <select id="canjeable_porcentual" name="canjeable_porcentual">
+                    <option value="Canjeable" <?php echo $oferta['Tipo'] == 'Canjeable' ? 'selected' : ''; ?>>Canjeable</option>
+                    <option value="Porcentual" <?php echo $oferta['Tipo'] == 'Porcentual' ? 'selected' : ''; ?>>Porcentual</option>
+                </select>
+            </div>
+            <div style="width: 40%; margin-left: 5%;">
+                <p style="text-align: left;" for="valor">Valor de la oferta:</p>
+                <input type="number" id="valor" name="valor" step="0.01" value="<?php echo $oferta['Valor']; ?>" required>
+            </div>
+        </div>
 
-    <div>
-        <label for="valor">Valor de la oferta:</label>
-        <input type="number" id="valor" name="valor" step="0.01" value="<?php echo $oferta['Valor']; ?>" required>
-    </div>
+        <!-- Fechas de despliegue y expiración -->
+        <div style="display: flex; flex-direction: row; margin-top: 20px;">
+            <div style="width: 40%;">
+                <p style="text-align: left;" for="despliegue">Fecha de despliegue:</p>
+                <input type="date" id="despliegue" name="despliegue" value="<?php echo $oferta['Despliegue']; ?>" required>
+            </div>
+            <div style="width: 40%; margin-left: 5%;">
+                <p style="text-align: left;" for="expiracion">Fecha de expiración:</p>
+                <input type="date" id="expiracion" name="expiracion" value="<?php echo $oferta['Expiracion']; ?>" required>
+            </div>
+        </div>
 
-    <div>
-        <label for="despliegue">Fecha de despliegue:</label>
-        <input type="date" id="despliegue" name="despliegue" value="<?php echo $oferta['Despliegue']; ?>" required>
-    </div>
+        <!-- Botón para guardar cambios -->
+        <div class="botones-condiciones" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+            <button type="submit" id="confirmacion">Guardar Cambios</button>
+        </div>
 
-    <div>
-        <label for="expiracion">Fecha de expiración:</label>
-        <input type="date" id="expiracion" name="expiracion" value="<?php echo $oferta['Expiracion']; ?>" required>
-    </div>
-
-    <div>
-        <label for="producto">Producto asociado:</label>
-        <select id="producto" name="producto">
-            <option value="NULL" <?php echo is_null($oferta['Producto']) ? 'selected' : ''; ?>>General</option>
-            <?php while ($producto = mysqli_fetch_assoc($result_productos)) { ?>
-                <option value="<?php echo $producto['PK_Producto']; ?>" 
-                <?php echo $oferta['Producto'] == $producto['PK_Producto'] ? 'selected' : ''; ?>>
-                    <?php echo $producto['Nombre']; ?>
-                </option>
-            <?php } ?>
-        </select>
-    </div>
-
-    <button type="submit" id="confirmacion">Guardar Cambios</button>
-</form>
+    </form>
+</div>
 
 </body>
 </html>

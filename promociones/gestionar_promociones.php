@@ -1,20 +1,9 @@
 <?php
-// Incluir el archivo de conexión a la base de datos
+// Incluir archivos necesarios
 include '../php/conexion.php';
 include '../scripts/verificar_dia.php';
 
-if (isset($_POST['eliminar_oferta'])) {
-    $oferta_id = (int)$_POST['eliminar_oferta'];
-    $sql = "DELETE FROM ofertas WHERE Oferta = $oferta_id";
-    if (mysqli_query($conexion, $sql)) {
-        echo "Promoción eliminada correctamente.";
-    } else {
-        echo "Error al eliminar promoción: " . mysqli_error($conexion);
-    }
-}
-
-
-// Consulta para obtener la lista de promociones
+// Consulta para obtener lista de promociones
 $sql_lista = "
     SELECT o.Oferta, o.Tipo, o.Valor, o.Despliegue, o.Expiracion, IF(o.Producto IS NULL, 'General', p.Nombre) AS ProductoNombre
     FROM ofertas o
@@ -23,65 +12,79 @@ $sql_lista = "
 $resultado = mysqli_query($conexion, $sql_lista);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    $tipo_oferta = trim($conexion->real_escape_string($_POST['canjeable_porcentual']));
+    // Recibir datos del formulario
+    $producto = $_POST['producto'] ?? "NULL";
+    $tipo_oferta = $_POST['canjeable_porcentual'];
     $valor_oferta = (float) $_POST['valor'];
-    $despliegue = trim($conexion->real_escape_string($_POST['despliegue']));
-    $expiracion = trim($conexion->real_escape_string($_POST['expiracion']));
-    $tipo_condicion = trim($conexion->real_escape_string($_POST['tipo_condicion']));
+    $despliegue = $conexion->real_escape_string(trim($_POST['despliegue']));
+    $expiracion = $conexion->real_escape_string(trim($_POST['expiracion']));
+    $tipo_condicion = $conexion->real_escape_string(trim($_POST['tipo_condicion']));
     $valor_condicion = (int) $_POST['valor_condicion'];
 
-    // Determinar si la oferta es para un producto específico o general
-    if ($producto == "NULL") {
-        $nombre_producto = "todos los productos";  // General
+    // Obtener nombre del producto
+    if ($producto != "NULL") {
+        $stmt = mysqli_prepare($conexion, "SELECT Nombre FROM producto WHERE PK_Producto = ?");
+        mysqli_stmt_bind_param($stmt, 'i', $producto);
+        mysqli_stmt_execute($stmt);
+        $nombre_producto = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt))['Nombre'] ?? "Producto desconocido";
+        mysqli_stmt_close($stmt);
     } else {
-        // Obtener el nombre del producto desde la base de datos
-        $query_nombre_producto = "SELECT Nombre FROM producto WHERE PK_Producto = ?";
-        $stmt_producto = mysqli_prepare($conexion, $query_nombre_producto);
-        mysqli_stmt_bind_param($stmt_producto, 'i', $producto);
-        mysqli_stmt_execute($stmt_producto);
-        mysqli_stmt_bind_result($stmt_producto, $nombre_producto);
-        mysqli_stmt_fetch($stmt_producto);
-        mysqli_stmt_close($stmt_producto);
+        $nombre_producto = "todos los productos"; // General
     }
 
-    // Generar la descripción automática
+    // Generar descripción
     $descripcion_oferta = "En tu siguiente compra recibirás una oferta de $tipo_oferta con un descuento $valor_oferta, del $despliegue hasta el $expiracion en $nombre_producto.";
 
-    // Iniciar transacción para asegurar integridad
+    // Transacción
     mysqli_begin_transaction($conexion);
 
     try {
-        // 1. Insertar en la tabla condiciones
-        $sql_condicion = "INSERT INTO condiciones (Tipo, Valor) 
-                          VALUES (?, ?)";
+        // Insertar condición
+        $sql_condicion = "INSERT INTO condiciones (Tipo, Valor) VALUES (?, ?)";
         $stmt_condicion = mysqli_prepare($conexion, $sql_condicion);
         mysqli_stmt_bind_param($stmt_condicion, 'si', $tipo_condicion, $valor_condicion);
-        mysqli_stmt_execute($stmt_condicion);
-        $condicion_id = mysqli_insert_id($conexion); // Obtener el ID de la condición insertada
+        $condicionInsertada = mysqli_stmt_execute($stmt_condicion);
+        if (!mysqli_stmt_execute($stmt_condicion)) {
+            throw new Exception("Error al insertar condición: " . mysqli_error($conexion));
+        }
 
-        // 2. Insertar en la tabla ofertas con la descripción generada automáticamente
+        $condicion_id = mysqli_insert_id($conexion);
+
+        // Insertar oferta
         $sql_oferta = "INSERT INTO ofertas (Tipo, Valor, Despliegue, Expiracion, Condicion, Producto, Descripcion) 
                        VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt_oferta = mysqli_prepare($conexion, $sql_oferta);
         mysqli_stmt_bind_param($stmt_oferta, 'sdssiss', $tipo_oferta, $valor_oferta, $despliegue, $expiracion, $condicion_id, $producto, $descripcion_oferta);
-        mysqli_stmt_execute($stmt_oferta);
+        $ofertaInsertada = mysqli_stmt_execute($stmt_oferta);
+        if (!mysqli_stmt_execute($stmt_oferta)) {
+            throw new Exception("Error al insertar oferta: " . mysqli_error($conexion));
+        }
 
-        // Si todo es correcto, confirmar la transacción
-        mysqli_commit($conexion);
-        echo "Oferta y condición agregadas con éxito.";
+        if ($condicionInsertada && $ofertaInsertada) {
+            mysqli_commit($conexion);
+            header('Location: gestionar_promociones.php?success=true');
+            exit;
+        } else {
+            throw new Exception('Error al insertar datos');
+        }
+
     } catch (Exception $e) {
-        // Si algo falla, revertir los cambios
         mysqli_rollback($conexion);
-        echo "Error: No se pudieron insertar los datos. " . $e->getMessage();
+        echo "Error: " . $e->getMessage();
     }
 
-    // Cerrar las declaraciones preparadas y la conexión
-    mysqli_stmt_close($stmt_condicion);
-    mysqli_stmt_close($stmt_oferta);
+    // Cerrar conexiones
+    if (isset($stmt_oferta)) mysqli_stmt_close($stmt_oferta);
+    if (isset($stmt_condicion)) mysqli_stmt_close($stmt_condicion);
     mysqli_close($conexion);
+
+    if ($insercionExitosa) { // Suponiendo que esta variable indica que la oferta se agregó correctamente
+        header('Location: gestionar_promociones.php?success=true');
+        exit;
+    }
 }
 ?>
+
 
 
 <!DOCTYPE html>
@@ -96,25 +99,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/sweetalert.js"></script>
     <script>
-        // Función para habilitar o deshabilitar el valor de condición basado en el tipo de condición
-        function ajustarValorCondicion() {
-            const tipoCondicion = document.getElementById("tipo_condicion").value;
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectCanjeablePorcentual = document.getElementById('canjeable_porcentual');
+            const valorInput = document.getElementById('valor');
+            const tipoCondicion = document.getElementById("tipo_condicion");
             const valorCondicion = document.getElementById("valor_condicion");
-            
-            if (tipoCondicion === "temporada") {
-                valorCondicion.disabled = true;   // Deshabilitar para condición "Temporada"
-            } else {
-                valorCondicion.disabled = false;  // Habilitar para otros tipos
-            }
-        }
 
-        // Inicializar el estado del campo valor_condicion
-        document.addEventListener('DOMContentLoaded', () => {
-            ajustarValorCondicion(); // Ejecutar al cargar
+            // Función para ajustar el valor máximo del input "valor"
+            function ajustarValorMaximo() {
+                let maxValue = 0;
+                if (selectCanjeablePorcentual.value === 'Canjeable') {
+                    maxValue = 1000;
+                } else if (selectCanjeablePorcentual.value === 'Porcentual') {
+                    maxValue = 100;
+                }
+
+                // Actualiza el límite máximo y valida el valor actual
+                valorInput.oninput = function () {
+                    let value = parseFloat(valorInput.value);
+                    if (value < 1) valorInput.value = 1;
+                    if (value > maxValue) valorInput.value = maxValue;
+                };
+            }
+
+            // Función para habilitar o deshabilitar el valor de condición
+            function ajustarValorCondicion() {
+                if (tipoCondicion.value === "Temporada") {
+                    valorCondicion.disabled = true;
+                    valorCondicion.value = ""; // Limpia el valor si está deshabilitado
+                } else {
+                    valorCondicion.disabled = false;
+                }
+            }
+
+            // Inicializar funciones al cargar la página
+            ajustarValorMaximo();
+            ajustarValorCondicion();
+
+            // Agregar eventos
+            selectCanjeablePorcentual.addEventListener('change', ajustarValorMaximo);
+            tipoCondicion.addEventListener('change', ajustarValorCondicion);
         });
     </script>
 </head>
 <body>
+
+<?php
+if (isset($_GET['success']) && $_GET['success'] === 'true') {
+    echo "<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                title: '¡Éxito!',
+                text: 'Lista de promociones actualizada.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+    </script>";
+}
+?>
+
+
 <div class="contenedor-producto cuadro">
     <form action="gestionar_promociones.php" method="POST">
 
@@ -124,7 +170,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <p style="text-align: left;" for="producto">Oferta para Producto Específico o General:</p>
                 <select id="producto" name="producto">
                     <option value="NULL">General</option>
-
                     <?php
                     // Actualizar consulta para incluir solo productos visibles
                     $query_productos = "SELECT PK_Producto, Nombre FROM producto WHERE Visibilidad = 1";
@@ -146,9 +191,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div style="width: 40%;">
                 <p style="text-align: left;" for="canjeable_porcentual">Canjeable o Porcentual:</p>
                 <select id="canjeable_porcentual" name="canjeable_porcentual" required>
-                    <option value="canjeable">Canjeable</option>
-                    <option value="porcentual">Porcentual</option>
+                    <option value="Canjeable">Canjeable</option>
+                    <option value="Porcentual">Porcentual</option>
                 </select>
+
             </div>
             <div style="width: 40%; margin-left: 5%;">
                 <p style="text-align: left;" for="valor">Valor:</p>
@@ -173,9 +219,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div style="width: 50%;">
                 <p style="text-align: left;" for="tipo_condicion">Tipo de condición:</p>
                 <select id="tipo_condicion" name="tipo_condicion" required onchange="ajustarValorCondicion()">
-                    <option value="cantidad_compras">Cantidad de compras</option>
-                    <option value="productos_comprados">Productos comprados</option>
-                    <option value="temporada">Temporada</option>
+                    <option value="Cantidad de compras">Cantidad de compras</option>
+                    <option value="Productos comprados">Productos comprados</option>
+                    <option value="Temporada">Temporada</option>
                 </select>
             </div>
             <div style="width: 40%; margin-left: 5%;">
