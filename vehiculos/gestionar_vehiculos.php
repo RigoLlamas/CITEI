@@ -105,7 +105,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
 
             <div class="botones-vehiculos" style="margin-top: 20px; display: flex; justify-content: flex-end;">
                 <button type="submit" <?php if ($deshabilitar_boton) echo 'disabled'; ?>>
-                    Agregar Vehículo
+                    Agregar <br>Vehículo
                 </button>
             </div>
         </form>

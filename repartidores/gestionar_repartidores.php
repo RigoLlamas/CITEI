@@ -102,7 +102,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                     required>
                 </div>
                 <div style="width: 40%;" class="botones-repartidores">
-                    <button type="submit">Agregar</button>
+                    <button type="submit">Agregar <br>Repartidor</button>
                 </div>
             </div>   
         </form>
