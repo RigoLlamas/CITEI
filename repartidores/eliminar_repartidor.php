@@ -10,7 +10,7 @@ if (isset($_GET['nomina'])) {
 
     if (mysqli_query($conexion, $sql)) {
         // Redirigir a la página principal después de la eliminación
-        header("Location: gestionar_repartidores.php?mensaje=Repartidor eliminado correctamente.");
+        header('Location: gestionar_repartidores.php?success=true');
         exit();
     } else {
         echo "Error al eliminar el repartidor: " . mysqli_error($conexion);

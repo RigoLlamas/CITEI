@@ -1,17 +1,6 @@
 <?php 
 include '../php/conexion.php';
 
-// Eliminar repartidor si se ha enviado una solicitud para eliminar
-if (isset($_POST['eliminar_nomina'])) {
-    $nomina = (float)$_POST['eliminar_nomina'];
-    $sql = "DELETE FROM repartidor WHERE Nomina = $nomina";
-    if (mysqli_query($conexion, $sql)) {
-        echo "Repartidor eliminado correctamente.";
-    } else {
-        echo "Error al eliminar repartidor: " . mysqli_error($conexion);
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nomina = (float) $_POST['nomina'];
     $nombre = trim($conexion->real_escape_string($_POST['nombre']));
@@ -24,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             VALUES ('$nomina', '$nombre', '$apellidos', '$estado', '$clave')";
 
     if (mysqli_query($conexion, $sql)) {
-        echo "Repartidor agregado exitosamente.";
+        header('Location: gestionar_repartidores.php?success=true');
     } else {
         echo "Error: " . $sql . "<br>" . mysqli_error($conexion);
     }
@@ -55,6 +44,23 @@ $deshabilitar_boton = $total_repartidores >= 10;
     <script src="../js/sweetalert.js"></script>
 </head>
 <body>
+
+<?php
+if (isset($_GET['success']) && $_GET['success'] === 'true') {
+    echo "<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                title: '¡Éxito!',
+                text: 'Lista de promociones actualizada.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+    </script>";
+}
+?>
+
     <h2 style="text-align: center;">Repartidores</h2>    
 
     <div class="contenedor-repartidor cuadro">
@@ -111,10 +117,10 @@ $deshabilitar_boton = $total_repartidores >= 10;
                 while ($repartidor = mysqli_fetch_assoc($resultado)) {
                     echo "<li>";
                     echo "Nómina: " . $repartidor['Nomina'] . " - " . $repartidor['Nombre'] . " " . $repartidor['Apellidos'] . " (Estado: " . $repartidor['Estado'] . ")";
-                    // Botones para modificar y eliminar
-                    echo " <a href='modificar_repartidor.php?nomina=" . $repartidor['Nomina'] . "'>Modificar</a> | ";
+                    echo "<div>";
+                    echo "<a href='modificar_repartidor.php?nomina=" . $repartidor['Nomina'] . "'>Modificar</a> | ";
                     echo "<a href='eliminar_repartidor.php?nomina=" . $repartidor['Nomina'] . "' class='confirmar-accion'>Eliminar</a>";
-
+                    echo "</div>";
                     echo "</li>";
                 }
             } else {

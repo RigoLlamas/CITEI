@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     mysqli_query($conexion, $sql);
     mysqli_close($conexion);
 
-    header("Location: gestionar_repartidores.php");
+    header('Location: gestionar_repartidores.php?success=true');
     exit();
 }
 

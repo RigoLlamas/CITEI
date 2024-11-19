@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         if ($condicionInsertada && $ofertaInsertada) {
-            if(mysqli_commit($conexion))
+            mysqli_commit($conexion);
             header('Location: gestionar_promociones.php?success=true');
             exit;
         } else {

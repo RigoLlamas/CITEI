@@ -963,7 +963,7 @@ gmp-map {
     display: flex;
     flex-direction: row;
     margin-left: 80%;
-
+    text-align: center;
 }
 
 /* Estilo para el contenedor de la lista de repartidores */
