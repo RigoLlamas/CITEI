@@ -10,7 +10,7 @@ if (isset($_GET['placa'])) {
 
     if (mysqli_query($conexion, $sql)) {
         // Redirigir a la página principal después de la eliminación
-        header("Location: gestionar_vehiculos.php?mensaje=Vehículo eliminado correctamente.");
+        header("Location: gestionar_vehiculos.php?");
         exit();
     } else {
         echo "Error al eliminar el vehículo: " . mysqli_error($conexion);

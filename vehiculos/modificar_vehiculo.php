@@ -15,8 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     mysqli_query($conexion, $sql);
     mysqli_close($conexion);
 
-    // Redirigir a la página principal después de la modificación
-    header("Location: gestionar_vehiculos.php");
+
+    header('Location: gestionar_vehiculos.php?success=true');
     exit();
 }
 

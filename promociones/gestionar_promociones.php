@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         if ($condicionInsertada && $ofertaInsertada) {
-            mysqli_commit($conexion);
+            if(mysqli_commit($conexion))
             header('Location: gestionar_promociones.php?success=true');
             exit;
         } else {
@@ -77,15 +77,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($stmt_oferta)) mysqli_stmt_close($stmt_oferta);
     if (isset($stmt_condicion)) mysqli_stmt_close($stmt_condicion);
     mysqli_close($conexion);
-
-    if ($insercionExitosa) { // Suponiendo que esta variable indica que la oferta se agregó correctamente
-        header('Location: gestionar_promociones.php?success=true');
-        exit;
-    }
 }
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">

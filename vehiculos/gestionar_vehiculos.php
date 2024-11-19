@@ -1,17 +1,6 @@
 <?php 
 include '../php/conexion.php';
 
-// Eliminar vehículo si se ha enviado una solicitud para eliminar
-if (isset($_POST['eliminar_placa'])) {
-    $placa = $conexion->real_escape_string($_POST['eliminar_placa']);
-    $sql = "DELETE FROM vehiculo WHERE Placa = '$placa'";
-    if (mysqli_query($conexion, $sql)) {
-        echo "Vehículo eliminado correctamente.";
-    } else {
-        echo "Error al eliminar vehículo: " . mysqli_error($conexion);
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['placa'])) {
     $placa = trim($conexion->real_escape_string($_POST['placa']));
     $largo = (float) $_POST['largo'];
@@ -23,7 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['placa'])) {
     // SQL para insertar un nuevo vehículo
     $sql = "INSERT INTO vehiculo (Placa, Largo, Alto, Ancho, Modelo, Estado)
             VALUES ('$placa', $largo, $alto, $ancho, '$modelo', '$estado')";
-    mysqli_query($conexion, $sql)
+    if(mysqli_query($conexion, $sql))
+    header('Location: gestionar_vehiculos.php?success=true');
 }
 
 // Consulta para obtener la lista de vehículos
@@ -51,6 +41,23 @@ $deshabilitar_boton = $total_vehiculos >= 10;
     <script src="../js/sweetalert.js"></script>
 </head>
 <body>
+
+<?php
+if (isset($_GET['success']) && $_GET['success'] === 'true') {
+    echo "<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                title: '¡Éxito!',
+                text: 'Lista de vehículos actualizada.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+    </script>";
+}
+?>
+
     <h2 style="text-align: center;">Gestión de Vehículos</h2>    
 
     <div class="contenedor-vehiculo cuadro">
@@ -113,9 +120,10 @@ $deshabilitar_boton = $total_vehiculos >= 10;
                     while ($vehiculo = mysqli_fetch_assoc($resultado)) {
                         echo "<li>";
                         echo "Placa: " . $vehiculo['Placa'] . " - Modelo: " . $vehiculo['Modelo'] . " (Estado: " . $vehiculo['Estado'] . ")";
-                        // Botones para modificar y eliminar
+                        echo "<div>";
                         echo " <a href='modificar_vehiculo.php?placa=" . $vehiculo['Placa'] . "'>Modificar</a> | ";
                         echo "<a href='eliminar_vehiculo.php?placa=" . $vehiculo['Placa'] . "' class='confirmar-accion'>Eliminar</a>";
+                        echo "</div>";
                         echo "</li>";
                     }
                 } else {
