@@ -4,9 +4,9 @@ include '../php/conexion.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Escapar y validar entradas
     $nombre = $conexion->real_escape_string(trim($_POST['nombre']));
-    $descripcion = $conexion->real_escape_string(trim($_POST['descripcion']));
+    $descripcion = trim($_POST['descripcion']);
     $precio = isset($_POST['precio']) ? (float)$_POST['precio'] : 0;
-    $caracteristicas = $conexion->real_escape_string(trim($_POST['caracteristicas']));
+    $caracteristicas = trim($_POST['caracteristicas']);
     $largo = isset($_POST['largo']) ? (float)$_POST['largo'] : 0;
     $ancho = isset($_POST['ancho']) ? (float)$_POST['ancho'] : 0;
     $alto = isset($_POST['alto']) ? (float)$_POST['alto'] : 0;
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validar que todos los datos estén presentes
     if ($nombre && $descripcion && $precio > 0 && $largo > 0 && $ancho > 0 && $alto > 0) {
         $stmt = $conexion->prepare("INSERT INTO producto (Nombre, Descripcion, Precio, Caracteristicas, Largo, Ancho, Alto) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssdssss", $nombre, $descripcion, $precio, $caracteristicas, $largo, $ancho, $alto);
+        $stmt->bind_param("ssdsddd", $nombre, $descripcion, $precio, $caracteristicas, $largo, $ancho, $alto);
 
         if ($stmt->execute()) {
             $id_producto = $stmt->insert_id;
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <h2 style="text-align: center;">Agregar Producto</h2>
 
-    <form class="cuadro agregar_productos__campos" action="agregar_producto.php" method="POST" enctype="multipart/form-data">
+    <form class="cuadro agregar_productos__campos" id="formAgregarProducto" action="agregar_producto.php" method="POST" enctype="multipart/form-data">
         <label for="nombre">Nombre del Producto:</label><br>
         <input type="text" id="nombre" name="nombre" minlength="1" maxlength="150" autocomplete="off" required><br><br>
 
@@ -99,39 +99,126 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         </div>
 
-        <label for="imagen">Subir Imagen:</label><br>
-        <input type="file" id="imagenes" name="imagenes[]" accept="image/png, image/jpeg" multiple><br><br>
+        <label for="cargar_imagenes" class="boton-cargar">Subir Imágenes:</label><br>
+        <input type="file" id="cargar_imagenes" name="imagenes[]" accept="image/png, image/jpeg" multiple><br><br>
+
+        <!-- Contenedor de vista previa -->
+        <div id="informacionArchivos">
+            <p>No se han seleccionado archivos nuevos.</p>
+        </div>
+        <div class="contenedor-previa" id="contenedorPrevia"></div>
 
         <div class="agregar_productos__accion">
-            <button type="reset">Cancelar</button>
-            <button  type="submit">Agregar</button>
+            <button type="button" onclick="history.back()">Cancelar</button>
+            <button type="button" id="btnGuardar">Agregar Producto</button>
         </div>
     </form>
 
     <script>
-        document.getElementById('imagenes').addEventListener('change', function (event) {
-            const maxFiles = 6;
-            const maxSize = 5 * 1024 * 1024;
-            const input = event.target;
-            const numFiles = input.files.length;
-            const allowedTypes = ['image/png', 'image/jpeg'];
+        const inputCargarImagenes = document.getElementById('cargar_imagenes');
+        const informacionArchivos = document.getElementById('informacionArchivos');
+        const contenedorPrevia = document.getElementById('contenedorPrevia');
 
-            if (numFiles > maxFiles) {
-                Swal.fire('Error', 'Solo puedes subir un máximo de 6 imágenes.', 'error');
-                input.value = '';
-                return;
-            }
+        let archivosSeleccionados = [];
 
-            let validFiles = true;
-            for (let file of input.files) {
-                if (!allowedTypes.includes(file.type) || file.size > maxSize) {
-                    Swal.fire('Error', 'Archivo no válido. Asegúrate de que sean PNG o JPEG menores a 5 MB.', 'error');
-                    validFiles = false;
-                    break;
+        inputCargarImagenes.addEventListener('change', function() {
+            const archivos = Array.from(this.files);
+
+            archivosSeleccionados = [...archivos];
+
+            informacionArchivos.innerHTML = archivosSeleccionados.length > 0 ?
+                "<p>Archivos seleccionados:<br>" + archivosSeleccionados.map(file => file.name).join('<br></p>') :
+                "No se han seleccionado archivos.";
+
+            contenedorPrevia.innerHTML = "";
+
+            archivosSeleccionados.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const contenedorMiniatura = document.createElement('div');
+                        contenedorMiniatura.classList.add('miniatura');
+
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        contenedorMiniatura.appendChild(img);
+
+                        const botonEliminar = document.createElement('div');
+                        botonEliminar.classList.add('eliminar-imagen');
+                        botonEliminar.innerHTML = "&times;";
+                        botonEliminar.addEventListener('click', function() {
+                            eliminarImagen(index);
+                        });
+                        contenedorMiniatura.appendChild(botonEliminar);
+
+                        contenedorPrevia.appendChild(contenedorMiniatura);
+                    };
+                    reader.readAsDataURL(file);
                 }
+            });
+        });
+
+        function eliminarImagen(index) {
+            archivosSeleccionados.splice(index, 1);
+
+            actualizarVistaPrevia();
+        }
+
+        function actualizarVistaPrevia() {
+            contenedorPrevia.innerHTML = "";
+
+            informacionArchivos.textContent = archivosSeleccionados.length > 0 ?
+                "Archivos seleccionados: " + archivosSeleccionados.map(file => file.name).join('<br>') :
+                "No se han seleccionado archivos.";
+
+            archivosSeleccionados.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contenedorMiniatura = document.createElement('div');
+                    contenedorMiniatura.classList.add('miniatura');
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    contenedorMiniatura.appendChild(img);
+
+                    const botonEliminar = document.createElement('div');
+                    botonEliminar.classList.add('eliminar-imagen');
+                    botonEliminar.innerHTML = "&times;";
+                    botonEliminar.addEventListener('click', function() {
+                        eliminarImagen(index);
+                    });
+                    contenedorMiniatura.appendChild(botonEliminar);
+
+                    contenedorPrevia.appendChild(contenedorMiniatura);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+
+        document.getElementById('btnGuardar').addEventListener('click', function() {
+            const formulario = document.getElementById('formAgregarProducto');
+
+            // Verificar la validez del formulario
+            if (!formulario.checkValidity()) {
+                // Si el formulario no es válido, mostrar los errores del navegador
+                formulario.reportValidity();
+                return; // Salir sin mostrar SweetAlert
             }
 
-            if (!validFiles) input.value = '';
+            // Si el formulario es válido, mostrar SweetAlert
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¿Deseas agregar este producto?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, agregar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    formulario.submit();
+                }
+            });
         });
     </script>
 </body>

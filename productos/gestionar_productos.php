@@ -121,7 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <label for="cargar_imagenes" class="boton-cargar">Subir Imágenes</label>
         <input type="file" id="cargar_imagenes" name="imagenes[]" accept="image/png, image/jpeg" multiple>
-        <div id="informacionArchivos"><p>No se han seleccionado archivos nuevos.</p></div>
+        <div id="informacionArchivos">
+            <p>No se han seleccionado archivos nuevos.</p>
+        </div>
 
         <!-- Mostrar imágenes existentes en el contenedor de vista previa -->
         <div class="contenedor-previa" id="contenedorPrevia">
@@ -262,6 +264,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     });
 
     document.getElementById('btnGuardar').addEventListener('click', function() {
+        const formulario = document.getElementById('formModificarProducto');
+
+        // Verificar la validez del formulario
+        if (!formulario.checkValidity()) {
+            // Mostrar los errores del navegador si el formulario no es válido
+            formulario.reportValidity();
+            return; // Salir sin mostrar SweetAlert
+        }
+
+        // Si el formulario es válido, mostrar SweetAlert
         Swal.fire({
             title: '¿Estás seguro?',
             text: "¿Deseas guardar los cambios realizados?",
@@ -273,53 +285,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                document.getElementById('formModificarProducto').submit();
+                formulario.submit();
             }
         });
     });
+
 
     document.querySelectorAll('.eliminar-imagen').forEach(button => {
-    button.addEventListener('click', function() {
-        const nombreImagen = this.dataset.imagen;
+        button.addEventListener('click', function() {
+            const nombreImagen = this.dataset.imagen;
 
-        Swal.fire({
-            title: '¿Eliminar imagen?',
-            text: 'Esta acción es irreversible.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then(result => {
-            if (result.isConfirmed) {
-                fetch('eliminar_imagen.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            id_producto: <?php echo json_encode($producto['PK_Producto']); ?>,
-                            imagen: nombreImagen
+            Swal.fire({
+                title: '¿Eliminar imagen?',
+                text: 'Esta acción es irreversible.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    fetch('eliminar_imagen.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                id_producto: <?php echo json_encode($producto['PK_Producto']); ?>,
+                                imagen: nombreImagen
+                            })
                         })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire('Eliminada', 'Imagen eliminada correctamente.', 'success');
-                            // Acceder al contenedor padre y eliminarlo
-                            this.parentElement.remove();
-                        } else {
-                            Swal.fire('Error', data.message || 'No se pudo eliminar la imagen.', 'error');
-                        }
-                    })
-                    .catch(err => {
-                        Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
-                        console.error('Error:', err);
-                    });
-            }
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Eliminada', 'Imagen eliminada correctamente.', 'success');
+                                // Acceder al contenedor padre y eliminarlo
+                                this.parentElement.remove();
+                            } else {
+                                Swal.fire('Error', data.message || 'No se pudo eliminar la imagen.', 'error');
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
+                            console.error('Error:', err);
+                        });
+                }
+            });
         });
     });
-});
-
 </script>
 
 </html>
