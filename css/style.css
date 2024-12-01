@@ -66,7 +66,8 @@ h3 {
 
 p,
 label,
-li {
+li,
+th {
     font-size: 1.8rem;
     text-align: center;
 }
@@ -283,7 +284,7 @@ input[type="radio"] {
 
 /** Estilo del logo en la navegación **/
 .nav-bg img {
-    width: 2%;
+    width: 20%;
     height: auto;
     margin-left: 1.5%;
 }
@@ -997,6 +998,58 @@ gmp-map {
 
 .lista-promociones li a:nth-child(3) {
     color: #ff0000; /* Eliminar en rojo */
+}
+
+/* Clientes */
+.tabla-clientes {
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: var(--blanco);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.tabla-clientes th {
+    background-color: var(--azul);
+    color: var(--blanco);
+    text-align: left;
+    padding: 15px;
+}
+
+.tabla-clientes td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--gris-claro);
+}
+
+.tabla-clientes tr:nth-child(even) {
+    background-color: var(--fondo);
+}
+
+.tabla-clientes tr:hover {
+    background-color: var(--azul_claro);
+}
+
+.buscador {
+    text-align: center;
+    margin: 20px auto;
+}
+
+.buscador input {
+    padding: 10px;
+    width: 50%;
+    font-size: 1.8rem;
+    border: 1px solid var(--gris-claro);
+    border-radius: 5px;
+}
+
+.sin-resultados {
+    text-align: center;
+    color: var(--negro);
+    font-size: 1.8rem;
+    padding: 20px;
 }
 
 /* Repartidores */

@@ -15,7 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
             </header>
             <div class="nav-bg">
                 <nav class="navegacion-principal contenedor">
-                    <img src="../img/logo.png" alt="Logo CITEI">
+                    <a href="../login/login.html" aria-label="Ir a la página de inicio de sesión">
+                        <img src="../img/logo.png" alt="Logo CITEI - Ir a la página de inicio de sesión">
+                    </a>
+
 
                     <button class="hamburger" id="hamburger">
                         <i class="fa-solid fa-bars"></i>
@@ -54,7 +57,9 @@ document.addEventListener("DOMContentLoaded", function () {
             </header>
             <div class="nav-bg">
                 <nav class="navegacion-principal contenedor">
-                    <img src="../img/logo.png" alt="Logo CITEI">
+                    <a href="../login/login.html" aria-label="Ir a la página de inicio de sesión">
+                        <img src="../img/logo.png" alt="Logo CITEI - Ir a la página de inicio de sesión">
+                    </a>
 
                     <button class="hamburger" id="hamburger">
                         <i class="fa-solid fa-bars"></i>
@@ -63,18 +68,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     <div class="menu" id="menu">
                         <a href="../productos/productos.php">Productos</a>
                         <a href="../promociones/promociones.php">Promociones</a>
+                        <a href="../cliente/clientes.php">Clientes</a>
                         <a href="../pedidos_admin/pedidos.php">Pedidos</a>
                         <a href="../acerca_de/acerca_de.php">Acerca de</a>
                         <a href="../contactanos/contactanos.php">Contactanos</a>
+                        <a href="../vehiculos/gestionar_vehiculos.php">Vehiculos</a>
+                        <a href="../repartidores/gestionar_repartidores.php">Repartidores</a>
+                        <a href="../rutas/rutas.php">Rutas</a>
                         <div class="user-menu-container">
                             <div class="user-icon">
-                                <i class="fa-solid fa-user"></i>
+                            <i class="fa-solid fa-user"></i>
                             </div>
                             <div class="user-options" id="user-options">
-                                <a href="../vehiculos/gestionar_vehiculos.php">Vehiculos</a>
-                                <a href="../repartidores/gestionar_repartidores.php">Repartidores</a>
-                                <a href="../rutas/rutas.php">Rutas</a>
-                                <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
+                            <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
                             </div>
                         </div>
                     </div>
@@ -86,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var script = document.createElement('script');
 
             navegacion = isAdmin ? navegacionAdmin : navegacionUsuario;
-            
+
             // Inserta el HTML dinámicamente
             document.body.insertAdjacentHTML('afterbegin', navegacion);
 
@@ -95,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const hamburger = document.getElementById('hamburger');
 
             // Añadir evento al botón de hamburguesa
-            hamburger.addEventListener('click', function() {
+            hamburger.addEventListener('click', function () {
                 // Alternamos entre mostrar y ocultar el menú
                 menu.classList.toggle('active');
             });
@@ -104,12 +110,12 @@ document.addEventListener("DOMContentLoaded", function () {
             const userIcon = document.querySelector('.user-icon');
             const userOptions = document.getElementById('user-options');
 
-            userIcon.addEventListener('click', function() {
+            userIcon.addEventListener('click', function () {
                 userOptions.classList.toggle('active');
             });
 
             // Opcional: Cerrar el menú de usuario si se hace clic fuera
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 if (!userIcon.contains(event.target) && !userOptions.contains(event.target)) {
                     userOptions.classList.remove('active');
                 }

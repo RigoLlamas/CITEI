@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
         </div>
     </div>
+    <footer class="pie">
+        <p>&copy; 2024 CITEI. Todos los derechos reservados.</p>
+    </footer>
     `;
     document.body.insertAdjacentHTML("afterend", pie);
 });
