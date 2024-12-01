@@ -6,7 +6,7 @@ include('../php/conexion.php');
 function obtenerHistorialPedidos($conexion, $filtro = [])
 {
     $consulta = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Codigo, pedidos.Clave, 
-                            usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.Telefono, 
+                            usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.NumInterior, usuarios.NumExterior, usuarios.Telefono, 
                             SUM(detalles.Cantidad * detalles.Precio) AS Total 
                     FROM pedidos
                     JOIN usuarios ON pedidos.FK_Usuario = usuarios.PK_Usuario
@@ -34,7 +34,7 @@ function obtenerHistorialPedidos($conexion, $filtro = [])
 function obtenerDetallesPedido($conexion, $codigo, $clave)
 {
     $consulta = "SELECT pedidos.NumVenta, pedidos.Fecha, pedidos.Estado, pedidos.Codigo, pedidos.Clave,
-                            usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.Telefono,
+                            usuarios.Correo, usuarios.Nombres, usuarios.Apellidos, usuarios.Calle, usuarios.NumInterior, usuarios.NumExterior, usuarios.Telefono,
                             producto.Nombre AS Producto, detalles.Cantidad, detalles.Precio
                     FROM pedidos
                     JOIN usuarios ON pedidos.FK_Usuario = usuarios.PK_Usuario
@@ -212,23 +212,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
                                     <td><strong>Clave:</strong></td>
                                     <td><?php echo $pedido['Clave']; ?></td>
                                 </tr>
-
+                                
                                 <!-- Información del cliente -->
                                 <tr>
                                     <td><strong>Correo:</strong></td>
                                     <td><?php echo $pedido['Correo']; ?></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Nombres:</strong></td>
-                                    <td><?php echo $pedido['Nombres']; ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Apellidos:</strong></td>
-                                    <td><?php echo $pedido['Apellidos']; ?></td>
+                                    <td><strong>Nombre:</strong></td>
+                                    <td><?php echo $pedido['Nombres'] . " " . $pedido['Apellidos']; ?></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Calle:</strong></td>
-                                    <td><?php echo $pedido['Calle']; ?></td>
+                                    <td><?php echo $pedido['Calle'] . " " . $pedido['NumExterior'] . "-" . $pedido['NumInterior']; ?></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Teléfono:</strong></td>
