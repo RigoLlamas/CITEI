@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if (selectCanjeablePorcentual.value === 'Canjeable') {
                     maxValue = 1000;
                 } else if (selectCanjeablePorcentual.value === 'Porcentual') {
-                    maxValue = 100;
+                    maxValue = 70;
                 }
 
                 // Actualiza el límite máximo y valida el valor actual

@@ -123,19 +123,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <div class="contendeor_medidas">
         <div>
-            <label for="largo">Largo (m):</label><br>
+            <label for="largo">Largo del paquete (m):</label><br>
             <input autocomplete="off" type="number" id="largo" name="largo" step="0.01" 
             min ="0.01" max="10"
             required><br><br>
         </div>
         <div>
-            <label for="ancho">Ancho (m):</label><br>
+            <label for="ancho">Ancho del paquete (m):</label><br>
             <input autocomplete="off" type="number" id="ancho" name="ancho" step="0.01" 
             min ="0.01" max="10"
             required><br><br>
         </div>
         <div>
-            <label for="alto">Alto (m):</label><br>
+            <label for="alto">Alto del paquete (m):</label><br>
             <input autocomplete="off" type="number" id="alto" name="alto" step="0.01" 
             min ="0.01" max="10"
             required><br><br>

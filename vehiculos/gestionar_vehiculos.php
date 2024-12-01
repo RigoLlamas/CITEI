@@ -68,19 +68,19 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                     <input type="text" id="placa" name="placa" maxlength="9" required>
                 </div>
                 <div style="width: 20%; margin-left: 5%;">
-                    <p style="text-align: left;" for="largo">Largo (m):</p>
+                    <p style="text-align: left;" for="largo">Largo de cabina (m):</p>
                     <input type="number" id="largo" name="largo" step="0.01" 
                     min = "0.1" max = "20"
                     required>
                 </div>
                 <div style="width: 20%; margin-left: 5%;">
-                    <p style="text-align: left;" for="alto">Alto (m):</p>
+                    <p style="text-align: left;" for="alto">Alto de cabina (m):</p>
                     <input type="number" id="alto" name="alto" step="0.01" 
                     min = "0.1" max = "20"
                     required>
                 </div>
                 <div style="width: 20%; margin-left: 5%;">
-                    <p style="text-align: left;" for="ancho">Ancho (m):</p>
+                    <p style="text-align: left;" for="ancho">Ancho de cabina (m):</p>
                     <input type="number" id="ancho" name="ancho" step="0.01" 
                     min = "0.1" max = "20"
                     required>

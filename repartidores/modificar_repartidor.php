@@ -2,20 +2,46 @@
 include '../php/conexion.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Actualizar los datos del repartidor
+    // Validar y obtener los datos enviados
     $nomina = (float)$_POST['nomina'];
-    $nombre = $conexion->real_escape_string($_POST['nombre']);
-    $apellidos = $conexion->real_escape_string($_POST['apellidos']);
-    $estado = $conexion->real_escape_string($_POST['estado']);
+    $nombre = $_POST['nombre'];
+    $apellidos = $_POST['apellidos'];
+    $estado = $_POST['estado'];
+    $clave = $_POST['clave'];
 
-    // Consulta para modificar el repartidor
-    $sql = "UPDATE repartidor SET Nombre = '$nombre', Apellidos = '$apellidos', Estado = '$estado' WHERE Nomina = $nomina";
-    mysqli_query($conexion, $sql);
-    mysqli_close($conexion);
+    // Preparar la consulta base para actualizar el repartidor
+    $sql = "UPDATE repartidor SET Nombre = ?, Apellidos = ?, Estado = ?";
 
-    header('Location: gestionar_repartidores.php?success=true');
-    exit();
+    // Agregar la clave si no está vacía o nula
+    if (!empty($clave)) {
+        $sql .= ", Clave = ?";
+    }
+
+    $sql .= " WHERE Nomina = ?";
+
+    // Preparar la consulta
+    $stmt = $conexion->prepare($sql);
+
+    // Vincular los parámetros según si la clave es enviada o no
+    if (!empty($clave)) {
+        $stmt->bind_param("sssisi", $nombre, $apellidos, $estado, $clave, $nomina);
+    } else {
+        $stmt->bind_param("sssi", $nombre, $apellidos, $estado, $nomina);
+    }
+
+    // Ejecutar la consulta
+    if ($stmt->execute()) {
+        header('Location: gestionar_repartidores.php?success=true');
+        exit();
+    } else {
+        echo "Error al actualizar el repartidor: " . $stmt->error;
+    }
+
+    // Cerrar la declaración y la conexión
+    $stmt->close();
+    $conexion->close();
 }
+
 
 if (isset($_GET['nomina'])) {
     $nomina = (float)$_GET['nomina'];
@@ -26,9 +52,10 @@ if (isset($_GET['nomina'])) {
 
     // Mostrar el formulario de modificación con los datos actuales del repartidor
     if ($repartidor = mysqli_fetch_assoc($resultado)) {
-        ?>
+?>
         <!DOCTYPE html>
         <html lang="es">
+
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,11 +66,12 @@ if (isset($_GET['nomina'])) {
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script src="../js/sweetalert.js"></script>
         </head>
+
         <body>
             <h2 style="text-align: center;">Modificar Repartidor</h2>
             <div class="contenedor-repartidor cuadro">
                 <form action="modificar_repartidor.php" method="POST">
-                    <input type="hidden" name="nomina" value="<?php echo $repartidor['Nomina']; ?>">
+                <input type="hidden" id="nomina" name="nomina" value="<?php echo $repartidor['Nomina']; ?>">
 
                     <div style="display: flex; flex-direction: row;">
                         <div style="width: 80%;">
@@ -82,11 +110,12 @@ if (isset($_GET['nomina'])) {
                 </form>
             </div>
         </body>
+
         </html>
-        <?php
+<?php
     } else {
         echo "No se encontró el repartidor.";
     }
     mysqli_close($conexion);
-} 
+}
 ?>
