@@ -20,13 +20,12 @@ if (isset($_GET['oferta'])) {
 
 // Procesar el formulario de modificación si se ha enviado
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Obtener los valores actualizados del formulario
     $tipo_oferta = trim($conexion->real_escape_string($_POST['canjeable_porcentual']));
     $valor_oferta = (float)$_POST['valor'];
     $despliegue = trim($conexion->real_escape_string($_POST['despliegue']));
     $expiracion = trim($conexion->real_escape_string($_POST['expiracion']));
 
-    // Validar los valores ingresados (puedes agregar más validaciones)
+    // Validar los valores ingresados
     if ($tipo_oferta === 'Canjeable' && ($valor_oferta < 1 || $valor_oferta > 1000)) {
         $error = "El valor para 'Canjeable' debe estar entre 1 y 1000.";
     } elseif ($tipo_oferta === 'Porcentual' && ($valor_oferta < 1 || $valor_oferta > 100)) {
@@ -53,51 +52,14 @@ mysqli_close($conexion);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modificar Oferta</title>
     <script src="../js/pie.js" defer></script>
     <script src="../js/navbar.js" defer></script>
-    <script src="promociones.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/sweetalert.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const selectCanjeablePorcentual = document.getElementById('canjeable_porcentual');
-        const valorInput = document.getElementById('valor');
-
-        // Función para ajustar el valor máximo del input "valor"
-        function ajustarValorMaximo() {
-            let maxValue = 0;
-            if (selectCanjeablePorcentual.value === 'Canjeable') {
-                maxValue = 1000;
-            } else if (selectCanjeablePorcentual.value === 'Porcentual') {
-                maxValue = 100;
-            }
-
-            // Actualiza el límite máximo y valida el valor actual
-            valorInput.oninput = function () {
-                let value = parseFloat(valorInput.value);
-                if (value < 1) valorInput.value = 1;
-                if (value > maxValue) valorInput.value = maxValue;
-            };
-
-            // Validar el valor actual en caso de que ya exceda el máximo
-            let currentValue = parseFloat(valorInput.value);
-            if (currentValue > maxValue) {
-                valorInput.value = maxValue;
-            }
-        }
-
-        // Inicializar la función al cargar la página
-        ajustarValorMaximo();
-
-        // Agregar evento al cambiar el select
-        selectCanjeablePorcentual.addEventListener('change', ajustarValorMaximo);
-    });
-    </script>
 </head>
 <body>
 
@@ -116,8 +78,7 @@ if (isset($error)) {
 
 <h2>Modificar Oferta</h2>
 <div class="contenedor-producto cuadro">
-    <form action="modificar_oferta.php?oferta=<?php echo $oferta_id; ?>" method="POST">
-
+    <form id="formModificarOferta" action="modificar_oferta.php?oferta=<?php echo $oferta_id; ?>" method="POST">
         <!-- Selección de tipo de oferta -->
         <div style="display: flex; flex-direction: row; margin-top: 20px;">
             <div style="width: 40%;">
@@ -147,11 +108,60 @@ if (isset($error)) {
 
         <!-- Botón para guardar cambios -->
         <div class="botones-condiciones" style="margin-top: 20px; display: flex; justify-content: flex-end;">
-            <button type="submit" id="confirmacion">Guardar Cambios</button>
+            <button type="button" id="btnGuardarCambios">Guardar Cambios</button>
         </div>
-
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectCanjeablePorcentual = document.getElementById('canjeable_porcentual');
+    const valorInput = document.getElementById('valor');
+
+    // Ajustar el valor máximo del input "valor"
+    function ajustarValorMaximo() {
+        let maxValue = 0;
+        if (selectCanjeablePorcentual.value === 'Canjeable') {
+            maxValue = 1000;
+        } else if (selectCanjeablePorcentual.value === 'Porcentual') {
+            maxValue = 100;
+        }
+
+        valorInput.oninput = function () {
+            let value = parseFloat(valorInput.value);
+            if (value < 1) valorInput.value = 1;
+            if (value > maxValue) valorInput.value = maxValue;
+        };
+
+        // Validar el valor actual
+        let currentValue = parseFloat(valorInput.value);
+        if (currentValue > maxValue) {
+            valorInput.value = maxValue;
+        }
+    }
+
+    ajustarValorMaximo();
+    selectCanjeablePorcentual.addEventListener('change', ajustarValorMaximo);
+
+    // Confirmación antes de enviar el formulario
+    document.getElementById('btnGuardarCambios').addEventListener('click', function () {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¿Deseas guardar los cambios realizados?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formModificarOferta').submit();
+            }
+        });
+    });
+});
+</script>
 
 </body>
 </html>

@@ -1,199 +1,139 @@
 <?php
-// Incluir la conexión a la base de datos
 include '../php/conexion.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Escapar las entradas para evitar inyecciones SQL
-    $nombre = $conexion->real_escape_string($_POST['nombre']);
-    $descripcion = $conexion->real_escape_string($_POST['descripcion']);
-    $precio = (float)$_POST['precio'];
-    $caracteristicas = $conexion->real_escape_string($_POST['caracteristicas']);
-    $largo = (float)$_POST['largo'];
-    $ancho = (float)$_POST['ancho'];
-    $alto = (float)$_POST['alto'];
+    // Escapar y validar entradas
+    $nombre = $conexion->real_escape_string(trim($_POST['nombre']));
+    $descripcion = $conexion->real_escape_string(trim($_POST['descripcion']));
+    $precio = isset($_POST['precio']) ? (float)$_POST['precio'] : 0;
+    $caracteristicas = $conexion->real_escape_string(trim($_POST['caracteristicas']));
+    $largo = isset($_POST['largo']) ? (float)$_POST['largo'] : 0;
+    $ancho = isset($_POST['ancho']) ? (float)$_POST['ancho'] : 0;
+    $alto = isset($_POST['alto']) ? (float)$_POST['alto'] : 0;
 
-    // Actualizar los datos del producto en la base de datos
-    $sql = "INSERT INTO producto 
-            (Nombre, Descripcion, Precio, Caracteristicas, Largo, Ancho, Alto) 
-        VALUES 
-            ('$nombre', '$descripcion', '$precio', '$caracteristicas', '$largo', '$ancho', '$alto')";
+    // Validar que todos los datos estén presentes
+    if ($nombre && $descripcion && $precio > 0 && $largo > 0 && $ancho > 0 && $alto > 0) {
+        $stmt = $conexion->prepare("INSERT INTO producto (Nombre, Descripcion, Precio, Caracteristicas, Largo, Ancho, Alto) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssdssss", $nombre, $descripcion, $precio, $caracteristicas, $largo, $ancho, $alto);
 
+        if ($stmt->execute()) {
+            $id_producto = $stmt->insert_id;
 
-    if ($conexion->query($sql) === TRUE) {
-        $id_producto = mysqli_insert_id($conexion);
-        // Ruta del directorio de imágenes del producto
-        $directorio_imagenes = "imagenes_productos/producto_" . $id_producto . "/"; //Optener la ip de la insercion
-
-        // Verificar si el directorio de imágenes existe
-        if (file_exists($directorio_imagenes)) {
-            // Eliminar las imágenes existentes en el directorio
-            $files = glob($directorio_imagenes . "*"); // Obtiene todos los archivos en el directorio
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    unlink($file); // Elimina cada archivo
-                }
+            // Manejo del directorio de imágenes
+            $directorio_imagenes = "imagenes_productos/producto_" . $id_producto . "/";
+            if (!file_exists($directorio_imagenes)) {
+                mkdir($directorio_imagenes, 0777, true);
             }
-        } else {
-            // Crear el directorio si no existe
-            mkdir($directorio_imagenes, 0777, true);
-        }
 
-        // Verificar si se subieron nuevas imágenes
-        if (isset($_FILES['imagenes']) && !empty($_FILES['imagenes']['name'][0])) {
-            // Inicializar el contador de imágenes
-            $contador_imagenes = 1;
+            // Manejo de imágenes subidas
+            if (isset($_FILES['imagenes']) && !empty($_FILES['imagenes']['name'][0])) {
+                $contador_imagenes = 1;
 
-            // Procesar las nuevas imágenes
-            foreach ($_FILES['imagenes']['tmp_name'] as $key => $tmp_name) {
-                if (is_uploaded_file($tmp_name)) {
-                    // Obtener la extensión del archivo
-                    $extension = pathinfo($_FILES['imagenes']['name'][$key], PATHINFO_EXTENSION);
+                foreach ($_FILES['imagenes']['tmp_name'] as $key => $tmp_name) {
+                    if (is_uploaded_file($tmp_name)) {
+                        $extension = pathinfo($_FILES['imagenes']['name'][$key], PATHINFO_EXTENSION);
+                        $tipo_mime = mime_content_type($tmp_name);
 
-                    // Verificar el tipo MIME del archivo
-                    $tipo_mime = mime_content_type($tmp_name);
-                    if (in_array($tipo_mime, ['image/jpeg', 'image/png', 'image/jpg'])) {
-                        // Renombrar la imagen con un número secuencial
-                        $nombre_imagen = $contador_imagenes . "." . $extension;
-                        $ruta_imagen = $directorio_imagenes . $nombre_imagen;
+                        if (in_array($tipo_mime, ['image/jpeg', 'image/png', 'image/jpg'])) {
+                            $nombre_imagen = $contador_imagenes . "." . $extension;
+                            $ruta_imagen = $directorio_imagenes . $nombre_imagen;
 
-                        // Mover el archivo a la carpeta del producto
-                        if (move_uploaded_file($tmp_name, $ruta_imagen)) {
-                            echo "Imagen subida correctamente: " . $ruta_imagen . "<br>";
-                            $contador_imagenes++; // Incrementar el contador de imágenes
-                        } else {
-                            echo "Error al mover la imagen: " . $_FILES['imagenes']['name'][$key] . "<br>";
+                            if (move_uploaded_file($tmp_name, $ruta_imagen)) {
+                                $contador_imagenes++;
+                            }
                         }
-                    } else {
-                        echo "Error: Tipo de archivo no permitido (" . $tipo_mime . ").<br>";
                     }
-                } else {
-                    echo "Error: No se subió correctamente el archivo " . $_FILES['imagenes']['name'][$key] . ".<br>";
                 }
             }
+            header("Location: ../productos/productos.php?success=1");
+            exit;
         } else {
-            echo "No se subieron nuevas imágenes.";
+            $error = "Error al guardar el producto: " . $stmt->error;
         }
     } else {
-        echo "Error al actualizar el producto: " . $conexion->error;
+        $error = "Todos los campos son obligatorios y deben tener valores válidos.";
     }
-    header("Location: ../productos/productos.php");
-
-    // Cerrar la conexión
-    $conexion->close();
 }
-
 ?>
 
-
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CITEI - Agregar producto</title>
+    <title>CITEI - Agregar Producto</title>
     <script src="../js/pie.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/sweetalert.js"></script>
 </head>
+
 <body>
-<h2 style="text-align: center;">Agregar Producto</h2>
+    <h2 style="text-align: center;">Agregar Producto</h2>
 
-<form class="cuadro agregar_productos__campos" action="agregar_producto.php" method="POST" enctype="multipart/form-data">
-    <label for="nombre">Nombre del Producto:</label><br>
-    <input autocomplete="off" type="text" id="nombre" name="nombre" 
-    minlength="1" maxlength="150"
-    required><br><br>
+    <form class="cuadro agregar_productos__campos" action="agregar_producto.php" method="POST" enctype="multipart/form-data">
+        <label for="nombre">Nombre del Producto:</label><br>
+        <input type="text" id="nombre" name="nombre" minlength="1" maxlength="150" autocomplete="off" required><br><br>
 
-    <label for="descripcion">Descripción:</label><br>
-    <textarea autocomplete="off" id="descripcion" name="descripcion" rows="4" 
-    minlength="10" maxlength="1000"
-    required></textarea><br><br>
+        <label for="descripcion">Descripción:</label><br>
+        <textarea id="descripcion" name="descripcion" rows="4" minlength="10" maxlength="1000" autocomplete="off" required></textarea><br><br>
 
-    <label for="precio">Precio:</label><br>
-    <input autocomplete="off" type="number" id="precio" name="precio" step="0.01" 
-    min="0.01" max="1000000.00"
-    required><br><br>
+        <label for="precio">Precio:</label><br>
+        <input type="number" id="precio" name="precio" step="0.01" min="0.01" max="1000000.00" autocomplete="off" required><br><br>
 
-    <label for="caracteristicas">Características:</label><br>
-    <textarea autocomplete="off" id="caracteristicas" name="caracteristicas" rows="4" 
-    minlength="10" maxlength="1000"
-    required></textarea><br><br>
+        <label for="caracteristicas">Características:</label><br>
+        <textarea id="caracteristicas" name="caracteristicas" rows="4" minlength="10" maxlength="1000" autocomplete="off" required></textarea><br><br>
 
-    <div class="contendeor_medidas">
-        <div>
-            <label for="largo">Largo del paquete (m):</label><br>
-            <input autocomplete="off" type="number" id="largo" name="largo" step="0.01" 
-            min ="0.01" max="10"
-            required><br><br>
+        <div class="contendeor_medidas">
+            <div>
+                <label for="largo">Largo del paquete (m):</label><br>
+                <input type="number" id="largo" name="largo" step="0.01" min="0.01" max="10" autocomplete="off" required><br><br>
+            </div>
+            <div>
+                <label for="ancho">Ancho del paquete (m):</label><br>
+                <input type="number" id="ancho" name="ancho" step="0.01" min="0.01" max="10" autocomplete="off" required><br><br>
+            </div>
+            <div>
+                <label for="alto">Alto del paquete (m):</label><br>
+                <input type="number" id="alto" name="alto" step="0.01" min="0.01" max="10" autocomplete="off" required><br><br>
+            </div>
         </div>
-        <div>
-            <label for="ancho">Ancho del paquete (m):</label><br>
-            <input autocomplete="off" type="number" id="ancho" name="ancho" step="0.01" 
-            min ="0.01" max="10"
-            required><br><br>
-        </div>
-        <div>
-            <label for="alto">Alto del paquete (m):</label><br>
-            <input autocomplete="off" type="number" id="alto" name="alto" step="0.01" 
-            min ="0.01" max="10"
-            required><br><br>
-        </div>
-    </div>
 
-    <label for="imagen">Subir Imagen:</label><br>
-    <label for="imagen">Solo permite imágenes en formato PNG y JPEG, tamaño máximo 5MB.</label><br>
-    <input type="file" id="imagenes" name="imagenes[]" accept="image/png, image/jpeg" multiple><br><br>
+        <label for="imagen">Subir Imagen:</label><br>
+        <input type="file" id="imagenes" name="imagenes[]" accept="image/png, image/jpeg" multiple><br><br>
+
+        <div class="agregar_productos__accion">
+            <button type="reset">Cancelar</button>
+            <button  type="submit">Agregar</button>
+        </div>
+    </form>
 
     <script>
-        document.getElementById('imagenes').addEventListener('change', function(event) {
-        const maxFiles = 6;  // Límite de cantidad de archivos
-        const maxSize = 5 * 1024 * 1024;  // Tamaño máximo por archivo en bytes (5 MB)
-        const input = event.target;
-        const numFiles = input.files.length;
-        const allowedTypes = ['image/png', 'image/jpeg'];
+        document.getElementById('imagenes').addEventListener('change', function (event) {
+            const maxFiles = 6;
+            const maxSize = 5 * 1024 * 1024;
+            const input = event.target;
+            const numFiles = input.files.length;
+            const allowedTypes = ['image/png', 'image/jpeg'];
 
-        // Verificar cantidad de archivos
-        if (numFiles > maxFiles) {
-            alert('Solo puedes subir un máximo de ' + maxFiles + ' imágenes.');
-            input.value = ''; // Resetea el campo
-            return;
-        }
-
-        let validFiles = true;
-        for (let i = 0; i < numFiles; i++) {
-            const file = input.files[i];
-
-            // Verificar tipo de archivo
-            if (!allowedTypes.includes(file.type)) {
-                alert('Solo se permiten imágenes en formato PNG y JPEG.');
-                validFiles = false;
+            if (numFiles > maxFiles) {
+                Swal.fire('Error', 'Solo puedes subir un máximo de 6 imágenes.', 'error');
+                input.value = '';
+                return;
             }
 
-            // Verificar tamaño de archivo
-            if (file.size > maxSize) {
-                alert('El archivo ' + file.name + ' excede el tamaño máximo permitido de 5 MB.');
-                validFiles = false;
+            let validFiles = true;
+            for (let file of input.files) {
+                if (!allowedTypes.includes(file.type) || file.size > maxSize) {
+                    Swal.fire('Error', 'Archivo no válido. Asegúrate de que sean PNG o JPEG menores a 5 MB.', 'error');
+                    validFiles = false;
+                    break;
+                }
             }
-        }
 
-        // Si algún archivo no es válido, reinicia el input completo
-        if (!validFiles) {
-            input.value = ''; // Resetea el campo si hay archivos no válidos
-        }
-    });
-
+            if (!validFiles) input.value = '';
+        });
     </script>
-
-    <div class="agregar_productos__accion">
-        <div style="margin-right: 2rem; width: 20%;">
-            <button type="reset">Cancelar</button>
-        </div>
-        <div style="margin-right: 2rem; width: 20%;">
-            <button type="submit">Agregar</button>
-        </div>
-    </div>
-</form>
 </body>
+
 </html>

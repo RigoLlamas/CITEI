@@ -2,7 +2,6 @@
 include '../php/conexion.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Validar y obtener los datos enviados
     $nomina = (float)$_POST['nomina'];
     $nombre = $_POST['nombre'];
     $apellidos = $_POST['apellidos'];
@@ -12,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Preparar la consulta base para actualizar el repartidor
     $sql = "UPDATE repartidor SET Nombre = ?, Apellidos = ?, Estado = ?";
 
-    // Agregar la clave si no está vacía o nula
+    // Agregar la clave si no está vacía
     if (!empty($clave)) {
         $sql .= ", Clave = ?";
     }
@@ -34,14 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: gestionar_repartidores.php?success=true');
         exit();
     } else {
-        echo "Error al actualizar el repartidor: " . $stmt->error;
+        $error = "Error al actualizar el repartidor: " . $stmt->error;
     }
 
     // Cerrar la declaración y la conexión
     $stmt->close();
     $conexion->close();
 }
-
 
 if (isset($_GET['nomina'])) {
     $nomina = (float)$_GET['nomina'];
@@ -50,7 +48,6 @@ if (isset($_GET['nomina'])) {
     $sql = "SELECT * FROM repartidor WHERE Nomina = $nomina";
     $resultado = mysqli_query($conexion, $sql);
 
-    // Mostrar el formulario de modificación con los datos actuales del repartidor
     if ($repartidor = mysqli_fetch_assoc($resultado)) {
 ?>
         <!DOCTYPE html>
@@ -62,24 +59,22 @@ if (isset($_GET['nomina'])) {
             <title>Modificar Repartidor</title>
             <script src="../js/pie.js"></script>
             <script src="../js/navbar.js"></script>
-            <script src="repartidores.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-            <script src="../js/sweetalert.js"></script>
         </head>
 
         <body>
             <h2 style="text-align: center;">Modificar Repartidor</h2>
             <div class="contenedor-repartidor cuadro">
-                <form action="modificar_repartidor.php" method="POST">
-                <input type="hidden" id="nomina" name="nomina" value="<?php echo $repartidor['Nomina']; ?>">
+                <form id="formModificarRepartidor" action="modificar_repartidor.php" method="POST">
+                    <input type="hidden" name="nomina" value="<?php echo $repartidor['Nomina']; ?>">
 
                     <div style="display: flex; flex-direction: row;">
                         <div style="width: 80%;">
-                            <p style="text-align: left;" for="nomina">Nómina:</p>
-                            <input type="number" id="nomina" name="nomina" value="<?php echo $repartidor['Nomina']; ?>" disabled>
+                            <p style="text-align: left;">Nómina:</p>
+                            <input type="number" value="<?php echo $repartidor['Nomina']; ?>" disabled>
                         </div>
                         <div style="width: 20%;">
-                            <p style="text-align: left;" for="estado">Estado:</p>
+                            <p style="text-align: left;">Estado:</p>
                             <select id="estado" name="estado" required>
                                 <option value="Disponible" <?php if ($repartidor['Estado'] == 'Disponible') echo 'selected'; ?>>Disponible</option>
                                 <option value="Ocupado" <?php if ($repartidor['Estado'] == 'Ocupado') echo 'selected'; ?>>Ocupado</option>
@@ -89,32 +84,69 @@ if (isset($_GET['nomina'])) {
 
                     <div style="display: flex; flex-direction: row;">
                         <div style="width: 50%;">
-                            <p for="nombre">Nombre:</p>
-                            <input style="width: 100%;" type="text" id="nombre" name="nombre" value="<?php echo $repartidor['Nombre']; ?>" minlength="1" maxlength="150" required>
+                            <p>Nombre:</p>
+                            <input type="text" name="nombre" value="<?php echo $repartidor['Nombre']; ?>" minlength="1" maxlength="150" required>
                         </div>
                         <div style="width: 50%; margin-left: 5%;">
-                            <p for="apellidos">Apellidos:</p>
-                            <input style="width: 100%;" type="text" id="apellidos" name="apellidos" value="<?php echo $repartidor['Apellidos']; ?>" minlength="1" maxlength="150" required>
+                            <p>Apellidos:</p>
+                            <input type="text" name="apellidos" value="<?php echo $repartidor['Apellidos']; ?>" minlength="1" maxlength="150" required>
                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: row;">
                         <div style="width: 60%;">
-                            <p for="clave">Clave:</p>
-                            <input type="password" id="clave" name="clave" minlength="5" maxlength="50" required>
+                            <p>Clave:</p>
+                            <input type="password" name="clave" minlength="5" maxlength="50">
                         </div>
                         <div style="width: 40%;" class="botones-repartidores">
-                            <button type="submit" id="confirmacion">Guardar Cambios</button>
+                            <button type="button" id="btnGuardarCambios">Guardar Cambios</button>
                         </div>
                     </div>
                 </form>
             </div>
+
+            <?php if (isset($error)): ?>
+                <script>
+                    Swal.fire({
+                        title: 'Error',
+                        text: "<?php echo $error; ?>",
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                </script>
+            <?php endif; ?>
+
+            <script>
+                document.getElementById('btnGuardarCambios').addEventListener('click', function () {
+                    Swal.fire({
+                        title: '¿Guardar Cambios?',
+                        text: "¿Estás seguro de que deseas guardar los cambios realizados?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, guardar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('formModificarRepartidor').submit();
+                        }
+                    });
+                });
+            </script>
         </body>
 
         </html>
 <?php
     } else {
-        echo "No se encontró el repartidor.";
+        echo "<script>
+            Swal.fire({
+                title: 'Error',
+                text: 'No se encontró el repartidor.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
+        </script>";
     }
     mysqli_close($conexion);
 }

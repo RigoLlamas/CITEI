@@ -9,8 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $clave = trim($conexion->real_escape_string($_POST['clave']));
 
     // Verificar si la nómina ya existe
-    $checkNominaSql = "SELECT COUNT(*) AS count FROM repartidor WHERE Nomina = '$nomina'";
-    $result = mysqli_query($conexion, $checkNominaSql);
+    $checkNominaSql = "SELECT COUNT(*) AS count FROM repartidor WHERE Nomina = ?";
+    $stmt = mysqli_prepare($conexion, $checkNominaSql);
+    mysqli_stmt_bind_param($stmt, 'i', $nomina);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
     $row = mysqli_fetch_assoc($result);
 
     if ($row['count'] > 0) {
@@ -20,18 +23,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         // La nómina no está registrada, proceder con la inserción
         $sql = "INSERT INTO repartidor (Nomina, Nombre, Apellidos, Estado, Clave)
-                VALUES ('$nomina', '$nombre', '$apellidos', '$estado', '$clave')";
+                VALUES (?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($conexion, $sql);
+        mysqli_stmt_bind_param($stmt, 'issss', $nomina, $nombre, $apellidos, $estado, $clave);
 
-        if (mysqli_query($conexion, $sql)) {
+        if (mysqli_stmt_execute($stmt)) {
             header('Location: gestionar_repartidores.php?success=true');
             exit();
         } else {
-            echo "Error: " . $sql . "<br>" . mysqli_error($conexion);
+            $error = "Error: " . mysqli_error($conexion);
         }
+        mysqli_stmt_close($stmt);
     }
 }
-
-
 
 // Consulta para obtener la lista de repartidores
 $sql_lista = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor";
@@ -43,19 +47,19 @@ $total_repartidores = mysqli_fetch_assoc($resultado_contar)['total'];
 
 // Si hay 10 o más repartidores, deshabilitar el botón de agregar
 $deshabilitar_boton = $total_repartidores >= 10;
+
+mysqli_close($conexion);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CITEI - Gestionar Repartidores</title>
     <script src="../js/pie.js"></script>
     <script src="../js/navbar.js"></script>
-    <script src="repartidores.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/sweetalert.js"></script>
 </head>
 <body>
 
@@ -65,7 +69,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
         document.addEventListener('DOMContentLoaded', function () {
             Swal.fire({
                 title: '¡Éxito!',
-                text: 'Lista de promociones actualizada.',
+                text: 'Repartidor agregado correctamente.',
                 icon: 'success',
                 timer: 2000,
                 showConfirmButton: false
@@ -81,73 +85,65 @@ if (isset($_GET['error']) && $_GET['error'] === 'duplicate') {
                 title: 'Error',
                 text: 'La nómina del repartidor ya está registrada.',
                 icon: 'error',
-                timer: 2000,
-                showConfirmButton: false
+                confirmButtonText: 'Aceptar'
             });
         });
     </script>";
 }
 ?>
 
-    <h2 style="text-align: center;">Repartidores</h2>    
+<h2 style="text-align: center;">Repartidores</h2>    
 
-    <div class="contenedor-repartidor cuadro">
-        <form action="gestionar_repartidores.php" method="POST">
-            <div style="display: flex; flex-direction: row;">
-                <div style="width: 80%;">
-                    <p style="text-align: left;" for="nomina">Nómina:</p>
-                    <input type="number" id="nomina" name="nomina" required>
-                </div>
-                <div style="width: 20%;">
-                    <p style="text-align: left;" for="estado">Estado:</p>
-                    <select id="estado" name="estado" required>
-                        <option value="Disponible">Disponible</option>
-                        <option value="Ocupado">Ocupado</option>
-                    </select>
-                </div>
-            </div>    
-        
-            <div style="display: flex; flex-direction: row;">
-                <div style="width: 50%;">
-                    <p for="nombre">Nombre:</p>
-                    <input style="width: 100%;" type="text" id="nombre" name="nombre" 
-                    minlength="1" maxlength="150"
-                    required>
-                </div>
-                <div style="width: 50%; margin-left: 5%;">
-                    <p for="apellidos">Apellidos:</p>
-                    <input style="width: 100%;" type="text" id="apellidos" name="apellidos" 
-                    minlength="1" maxlength="150"
-                    required>
-                </div>
-            </div>    
+<div class="contenedor-repartidor cuadro">
+    <form id="formAgregarRepartidor" action="gestionar_repartidores.php" method="POST">
+        <div style="display: flex; flex-direction: row;">
+            <div style="width: 80%;">
+                <p style="text-align: left;">Nómina:</p>
+                <input type="number" id="nomina" name="nomina" required>
+            </div>
+            <div style="width: 20%;">
+                <p style="text-align: left;">Estado:</p>
+                <select id="estado" name="estado" required>
+                    <option value="Disponible">Disponible</option>
+                    <option value="Ocupado">Ocupado</option>
+                </select>
+            </div>
+        </div>    
+    
+        <div style="display: flex; flex-direction: row;">
+            <div style="width: 50%;">
+                <p>Nombre:</p>
+                <input style="width: 100%;" type="text" id="nombre" name="nombre" minlength="1" maxlength="150" required>
+            </div>
+            <div style="width: 50%; margin-left: 5%;">
+                <p>Apellidos:</p>
+                <input style="width: 100%;" type="text" id="apellidos" name="apellidos" minlength="1" maxlength="150" required>
+            </div>
+        </div>    
 
-            <div style="display: flex; flex-direction: row;">
-                <div style="width: 60%;">
-                    <p for="clave">Contraseña:</p>
-                    <input type="password" id="clave" name="clave" 
-                    minlength="5" maxlength="50"
-                    required>
-                </div>
-                <div style="width: 40%;" class="botones-repartidores">
-                    <button type="submit">Agregar <br>Repartidor</button>
-                </div>
-            </div>   
-        </form>
+        <div style="display: flex; flex-direction: row;">
+            <div style="width: 60%;">
+                <p>Contraseña:</p>
+                <input type="password" id="clave" name="clave" minlength="5" maxlength="50" required>
+            </div>
+            <div style="width: 40%;" class="botones-repartidores">
+                <button type="button" id="btnAgregarRepartidor" <?php echo $deshabilitar_boton ? 'disabled' : ''; ?>>Agregar <br>Repartidor</button>
+            </div>
+        </div>   
+    </form>
 
-        <!-- Lista dinámica de repartidores -->
+    <!-- Lista dinámica de repartidores -->
     <div class="lista-repartidores">
         <h3>Repartidores registrados</h3>
         <ul id="repartidores">
             <?php
             if ($resultado && mysqli_num_rows($resultado) > 0) {
-                // Generar la lista de repartidores con botones
                 while ($repartidor = mysqli_fetch_assoc($resultado)) {
                     echo "<li>";
                     echo "Nómina: " . $repartidor['Nomina'] . " - " . $repartidor['Nombre'] . " " . $repartidor['Apellidos'] . " (Estado: " . $repartidor['Estado'] . ")";
                     echo "<div>";
                     echo "<a href='modificar_repartidor.php?nomina=" . $repartidor['Nomina'] . "'>Modificar</a> | ";
-                    echo "<a href='eliminar_repartidor.php?nomina=" . $repartidor['Nomina'] . "' class='confirmar-accion'>Eliminar</a>";
+                    echo "<a href='eliminar_repartidor.php?nomina=" . $repartidor['Nomina'] . "' class='btnEliminarRepartidor'>Eliminar</a>";
                     echo "</div>";
                     echo "</li>";
                 }
@@ -157,10 +153,48 @@ if (isset($_GET['error']) && $_GET['error'] === 'duplicate') {
             ?>
         </ul>
     </div>
-    </div>
+</div>
+
+<script>
+    document.getElementById('btnAgregarRepartidor').addEventListener('click', function () {
+        Swal.fire({
+            title: '¿Agregar Repartidor?',
+            text: "¿Estás seguro de registrar este repartidor?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, agregar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formAgregarRepartidor').submit();
+            }
+        });
+    });
+
+    document.querySelectorAll('.btnEliminarRepartidor').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = this.href;
+
+            Swal.fire({
+                title: '¿Eliminar Repartidor?',
+                text: "Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+</script>
+
 </body>
 </html>
-
-<?php 
-mysqli_close($conexion);
-?>

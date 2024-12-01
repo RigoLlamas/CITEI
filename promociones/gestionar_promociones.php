@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt_condicion = mysqli_prepare($conexion, $sql_condicion);
         mysqli_stmt_bind_param($stmt_condicion, 'si', $tipo_condicion, $valor_condicion);
         $condicionInsertada = mysqli_stmt_execute($stmt_condicion);
-        if (!mysqli_stmt_execute($stmt_condicion)) {
+        if (!$condicionInsertada) {
             throw new Exception("Error al insertar condición: " . mysqli_error($conexion));
         }
 
@@ -56,18 +56,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt_oferta = mysqli_prepare($conexion, $sql_oferta);
         mysqli_stmt_bind_param($stmt_oferta, 'sdssiss', $tipo_oferta, $valor_oferta, $despliegue, $expiracion, $condicion_id, $producto, $descripcion_oferta);
         $ofertaInsertada = mysqli_stmt_execute($stmt_oferta);
-        if (!mysqli_stmt_execute($stmt_oferta)) {
+        if (!$ofertaInsertada) {
             throw new Exception("Error al insertar oferta: " . mysqli_error($conexion));
         }
 
-        if ($condicionInsertada && $ofertaInsertada) {
-            mysqli_commit($conexion);
-            header('Location: gestionar_promociones.php?success=true');
-            exit;
-        } else {
-            throw new Exception('Error al insertar datos');
-        }
-
+        mysqli_commit($conexion);
+        header('Location: gestionar_promociones.php?success=true');
+        exit;
     } catch (Exception $e) {
         mysqli_rollback($conexion);
         echo "Error: " . $e->getMessage();
@@ -81,59 +76,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CITEI - Gestionar Promociones</title>
     <script src="../js/pie.js" defer></script>
     <script src="../js/navbar.js" defer></script>
-    <script src="promociones.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/sweetalert.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const selectCanjeablePorcentual = document.getElementById('canjeable_porcentual');
-            const valorInput = document.getElementById('valor');
-            const tipoCondicion = document.getElementById("tipo_condicion");
-            const valorCondicion = document.getElementById("valor_condicion");
-
-            // Función para ajustar el valor máximo del input "valor"
-            function ajustarValorMaximo() {
-                let maxValue = 0;
-                if (selectCanjeablePorcentual.value === 'Canjeable') {
-                    maxValue = 1000;
-                } else if (selectCanjeablePorcentual.value === 'Porcentual') {
-                    maxValue = 70;
-                }
-
-                // Actualiza el límite máximo y valida el valor actual
-                valorInput.oninput = function () {
-                    let value = parseFloat(valorInput.value);
-                    if (value < 1) valorInput.value = 1;
-                    if (value > maxValue) valorInput.value = maxValue;
-                };
-            }
-
-            // Función para habilitar o deshabilitar el valor de condición
-            function ajustarValorCondicion() {
-                if (tipoCondicion.value === "Temporada") {
-                    valorCondicion.disabled = true;
-                    valorCondicion.value = ""; // Limpia el valor si está deshabilitado
-                } else {
-                    valorCondicion.disabled = false;
-                }
-            }
-
-            // Inicializar funciones al cargar la página
-            ajustarValorMaximo();
-            ajustarValorCondicion();
-
-            // Agregar eventos
-            selectCanjeablePorcentual.addEventListener('change', ajustarValorMaximo);
-            tipoCondicion.addEventListener('change', ajustarValorCondicion);
-        });
-    </script>
 </head>
 <body>
 
@@ -153,10 +103,8 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
 }
 ?>
 
-
 <div class="contenedor-producto cuadro">
-    <form action="gestionar_promociones.php" method="POST">
-
+    <form id="formPromocion" action="gestionar_promociones.php" method="POST">
         <!-- Selección de Producto o General -->
         <div style="display: flex; flex-direction: row;">
             <div style="width: 50%;">
@@ -164,7 +112,6 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                 <select id="producto" name="producto">
                     <option value="NULL">General</option>
                     <?php
-                    // Actualizar consulta para incluir solo productos visibles
                     $query_productos = "SELECT PK_Producto, Nombre FROM producto WHERE Visibilidad = 1";
                     $result_productos = mysqli_query($conexion, $query_productos);
                     if ($result_productos) {
@@ -178,73 +125,24 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                 </select>
             </div>
         </div>
-
-        <!-- Selección de tipo de oferta -->
-        <div style="display: flex; flex-direction: row; margin-top: 20px;">
-            <div style="width: 40%;">
-                <p style="text-align: left;" for="canjeable_porcentual">Canjeable o Porcentual:</p>
-                <select id="canjeable_porcentual" name="canjeable_porcentual" required>
-                    <option value="Canjeable">Canjeable</option>
-                    <option value="Porcentual">Porcentual</option>
-                </select>
-
-            </div>
-            <div style="width: 40%; margin-left: 5%;">
-                <p style="text-align: left;" for="valor">Valor:</p>
-                <input type="number" id="valor" name="valor" step="0.01" required>
-            </div>
-        </div>
-
-        <!-- Fechas de despliegue y expiración -->
-        <div style="display: flex; flex-direction: row; margin-top: 20px;">
-            <div style="width: 40%;">
-                <p style="text-align: left;" for="despliegue">Despliegue (Fecha):</p>
-                <input type="date" id="despliegue" name="despliegue" required>
-            </div>
-            <div style="width: 40%; margin-left: 5%;">
-                <p style="text-align: left;" for="expiracion">Expiración (Fecha):</p>
-                <input type="date" id="expiracion" name="expiracion" required>
-            </div>
-        </div>
-
-        <!-- Selección de tipo de condición -->
-        <div style="display: flex; flex-direction: row; margin-top: 20px;">
-            <div style="width: 50%;">
-                <p style="text-align: left;" for="tipo_condicion">Tipo de condición:</p>
-                <select id="tipo_condicion" name="tipo_condicion" required onchange="ajustarValorCondicion()">
-                    <option value="Cantidad de compras">Cantidad de compras</option>
-                    <option value="Productos comprados">Productos comprados</option>
-                    <option value="Temporada">Temporada</option>
-                </select>
-            </div>
-            <div style="width: 40%; margin-left: 5%;">
-                <p style="text-align: left;" for="valor_condicion">Valor de la condición:</p>
-                <input type="number" id="valor_condicion" name="valor_condicion" required>
-            </div>
-        </div>
-
-        <!-- Botón para agregar la oferta -->
-        <div class="botones-condiciones" style="margin-top: 20px; display: flex; justify-content: flex-end;">
-            <button type="submit">
-                Agregar Promoción
-            </button>
+        <!-- Selección de tipo de oferta y más campos -->
+        <div style="margin-top: 20px;">
+            <button type="button" id="btnAgregarPromocion">Agregar Promoción</button>
         </div>
     </form>
-     <!-- Lista dinámica de promociones -->
-     <div class="lista-promociones">
+
+    <div class="lista-promociones">
         <h3>Promociones registradas</h3>
         <ul id="promociones">
             <?php
             if ($resultado && mysqli_num_rows($resultado) > 0) {
-                // Generar la lista de promociones con botones
                 while ($oferta = mysqli_fetch_assoc($resultado)) {
                     echo "<li>";
                     echo "Producto: " . $oferta['ProductoNombre'] . " - Tipo: " . $oferta['Tipo'] . " (" . $oferta['Valor'] . ") Despliegue: " . $oferta['Despliegue'] . " Expiración: " . $oferta['Expiracion'];
-                    // Botones para modificar, desplegar y eliminar
                     echo "<div>";
-                    echo " <a href='modificar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Modificar</a> | ";
+                    echo "<a href='modificar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Modificar</a> | ";
                     echo "<a href='desplegar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Desplegar</a> | ";
-                    echo "<a href='bajar_oferta.php?oferta=" . $oferta['Oferta'] . "' class='confirmar-accion'>Eliminar</a>";
+                    echo "<a href='bajar_oferta.php?oferta=" . $oferta['Oferta'] . "' class='btnEliminarPromocion'>Eliminar</a>";
                     echo "</div>";
                     echo "</li>";
                 }
@@ -256,5 +154,45 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
     </div>
 </div>
 
+<script>
+    document.getElementById('btnAgregarPromocion').addEventListener('click', function () {
+        Swal.fire({
+            title: '¿Agregar Promoción?',
+            text: "¿Deseas registrar esta promoción?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, agregar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formPromocion').submit();
+            }
+        });
+    });
+
+    document.querySelectorAll('.btnEliminarPromocion').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = this.href;
+
+            Swal.fire({
+                title: '¿Eliminar Promoción?',
+                text: "Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+</script>
 </body>
 </html>

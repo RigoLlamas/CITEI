@@ -842,6 +842,11 @@ gmp-map {
     width: 100%;
 }
 
+.agregar_productos__accion button{
+    width: 15rem;
+    margin: 1rem;
+}
+
 .custom-file-upload {
     position: relative;
     overflow: hidden;
