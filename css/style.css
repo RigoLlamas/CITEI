@@ -847,30 +847,74 @@ gmp-map {
     margin: 1rem;
 }
 
-.custom-file-upload {
-    position: relative;
-    overflow: hidden;
-    display: inline-block;
-}
-
-.custom-file-upload label {
-    background-color: var(--azul_claro);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-block;
-}
-
 /* Ocultar el input original */
-.custom-file-upload input[type="file"] {
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
+#cargar_imagenes {
+    display: none;
+}
+
+/* Botón personalizado */
+.boton-cargar {
+    display: inline-block;
+    background-color: var(--azul);
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.6rem;
+    transition: background-color 0.3s ease;
+    text-align: center;
+}
+
+.boton-cargar:hover {
+    background-color: var(--azul_claro);
+}
+
+/* Contenedor de vista previa */
+.contenedor-previa {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Miniaturas de imágenes */
+.miniatura {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border: 1px solid var(--fondo);
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Imagen dentro de la miniatura */
+.miniatura img {
     width: 100%;
     height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* Botón de eliminar */
+.eliminar-imagen {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
     cursor: pointer;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.eliminar-imagen:hover {
+    background-color: rgba(255, 0, 0, 0.9);
 }
 
 /* Promociones */
