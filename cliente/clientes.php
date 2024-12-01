@@ -42,7 +42,7 @@ try {
     </header>
     <section>
         <div class="buscador">
-            <input type="text" id="busqueda" placeholder="Buscar por nombre, correo o municipio" onkeyup="buscarClientes()">
+            <input type="text" id="busqueda" placeholder="Buscar por nombre, correo o municipio" onkeyup="buscarClientes()" maxlength="150">
         </div>
         <table class="tabla-clientes" id="tablaClientes">
             <thead>
