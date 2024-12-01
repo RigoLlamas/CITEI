@@ -72,8 +72,10 @@ $total_productos = $result_cantidad->fetch_assoc()['total_productos'];
                             
                             echo '<div class="producto" 
                                     data-id="' . $row["PK_Producto"] . '" 
+                                    data-descripcion="' . $row["Descripcion"] . '" 
                                     data-nombre="' . strtolower($row["Nombre"]) . '" 
                                     data-precio="' . $row["Precio"] . '" 
+                                    data-caracteristicas="' . $row["Caracteristicas"] . '" 
                                     data-imgs=\'' . $imagenes_json . '\'>';
 
                             // Mostramos la imagen del producto en la vista general (solo la primera o el logo)

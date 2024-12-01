@@ -163,7 +163,7 @@ function agregarAlCarrito() {
     .then(data => {
         Swal.fire({
             title: 'Producto agregado',
-            text: data,  // Mostrar el mensaje recibido desde el servidor
+            text: data, 
             icon: 'success',
             confirmButtonText: 'Aceptar'
         });
