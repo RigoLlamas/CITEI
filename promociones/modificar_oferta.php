@@ -1,167 +1,230 @@
 <?php
+// Incluir archivos necesarios
 include '../php/conexion.php';
 
-// Obtener el ID de la oferta a modificar desde la URL
-if (isset($_GET['oferta'])) {
-    $oferta_id = (int)$_GET['oferta'];
+// Obtener el ID de la oferta desde la URL
+if (!isset($_GET['oferta']) || !is_numeric($_GET['oferta'])) {
+    die("Error: No se especificó una oferta válida.");
+}
+$oferta_id = (int)$_GET['oferta'];
 
-    // Obtener los detalles de la oferta desde la base de datos
-    $sql_oferta = "SELECT * FROM ofertas WHERE Oferta = ?";
-    $stmt_oferta = mysqli_prepare($conexion, $sql_oferta);
-    mysqli_stmt_bind_param($stmt_oferta, 'i', $oferta_id);
-    mysqli_stmt_execute($stmt_oferta);
-    $result_oferta = mysqli_stmt_get_result($stmt_oferta);
-    $oferta = mysqli_fetch_assoc($result_oferta);
+// Consultar los detalles de la oferta
+$sql_detalle = "
+    SELECT o.Oferta, o.Tipo AS TipoOferta, o.Valor AS ValorOferta, o.Despliegue, o.Condicion, o.Producto,
+           c.Tipo AS TipoCondicion, c.Valor AS ValorCondicion, c.LimiteTiempo AS Expiracion, c.CantidadUsos,
+           IF(o.Producto IS NULL, 'General', p.Nombre) AS ProductoNombre
+    FROM ofertas o
+    JOIN condiciones c ON o.Condicion = c.Condicion
+    LEFT JOIN producto p ON o.Producto = p.PK_Producto
+    WHERE o.Oferta = ?
+";
+$stmt = mysqli_prepare($conexion, $sql_detalle);
+mysqli_stmt_bind_param($stmt, 'i', $oferta_id);
+mysqli_stmt_execute($stmt);
+$resultado = mysqli_stmt_get_result($stmt);
+$oferta = mysqli_fetch_assoc($resultado);
 
-    if (!$oferta) {
-        die('Error: Oferta no encontrada.');
-    }
+if (!$oferta) {
+    die("Error: No se encontró la oferta especificada.");
 }
 
-// Procesar el formulario de modificación si se ha enviado
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $tipo_oferta = trim($conexion->real_escape_string($_POST['canjeable_porcentual']));
-    $valor_oferta = (float)$_POST['valor'];
-    $despliegue = trim($conexion->real_escape_string($_POST['despliegue']));
-    $expiracion = trim($conexion->real_escape_string($_POST['expiracion']));
+// Actualizar la oferta si se envió el formulario
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $tipo_oferta = $conexion->real_escape_string($_POST['tipo_oferta']);
+    $valor_oferta = floatval($_POST['valor_oferta']);
+    $tipo_condicion = $conexion->real_escape_string($_POST['tipo_condicion']);
+    $despliegue = $conexion->real_escape_string($_POST['despliegue']);
+    $expiracion = !empty($_POST['expiracion']) ? $conexion->real_escape_string($_POST['expiracion']) : null;
+    $cantidad_usos = isset($_POST['cantidad_usos']) ? intval($_POST['cantidad_usos']) : null;
 
-    // Validar los valores ingresados
-    if ($tipo_oferta === 'Canjeable' && ($valor_oferta < 1 || $valor_oferta > 1000)) {
-        $error = "El valor para 'Canjeable' debe estar entre 1 y 1000.";
-    } elseif ($tipo_oferta === 'Porcentual' && ($valor_oferta < 1 || $valor_oferta > 100)) {
-        $error = "El valor para 'Porcentual' debe estar entre 1 y 100.";
-    } else {
-        // Actualizar la oferta en la base de datos
-        $sql_update = "UPDATE ofertas 
-                       SET Tipo = ?, Valor = ?, Despliegue = ?, Expiracion = ?
-                       WHERE Oferta = ?";
-        $stmt_update = mysqli_prepare($conexion, $sql_update);
-        mysqli_stmt_bind_param($stmt_update, 'sdssi', $tipo_oferta, $valor_oferta, $despliegue, $expiracion, $oferta_id);
+    // Actualizar la condición
+    $query_condicion = "UPDATE condiciones SET Tipo = ?, Valor = ?, LimiteTiempo = ?, CantidadUsos = ? WHERE Condicion = ?";
+    $stmt_condicion = mysqli_prepare($conexion, $query_condicion);
+    mysqli_stmt_bind_param($stmt_condicion, 'sisii', $tipo_condicion, $valor_oferta, $expiracion, $cantidad_usos, $oferta['Condicion']);
 
-        if (mysqli_stmt_execute($stmt_update)) {
-            header('Location: gestionar_promociones.php?success=true');
+    if (mysqli_stmt_execute($stmt_condicion)) {
+        // Actualizar la oferta
+        $query_oferta = "UPDATE ofertas SET Tipo = ?, Valor = ?, Despliegue = ? WHERE Oferta = ?";
+        $stmt_oferta = mysqli_prepare($conexion, $query_oferta);
+        mysqli_stmt_bind_param($stmt_oferta, 'sdsi', $tipo_oferta, $valor_oferta, $despliegue, $oferta_id);
+
+        if (mysqli_stmt_execute($stmt_oferta)) {
+            echo "<script>
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: 'La promoción ha sido modificada correctamente.',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    window.location.href = 'gestionar_promociones.php';
+                });
+            </script>";
             exit;
         } else {
-            $error = "Error al modificar la oferta: " . mysqli_error($conexion);
+            echo "<p style='color: red;'>Error al actualizar la oferta: " . mysqli_error($conexion) . "</p>";
         }
-
-        mysqli_stmt_close($stmt_update);
+    } else {
+        echo "<p style='color: red;'>Error al actualizar la condición: " . mysqli_error($conexion) . "</p>";
     }
 }
-mysqli_close($conexion);
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modificar Oferta</title>
-    <script src="../js/pie.js" defer></script>
-    <script src="../js/navbar.js" defer></script>
+    <title>Modificar Promoción</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
-
-<?php
-if (isset($error)) {
-    echo "<script>
-        Swal.fire({
-            title: 'Error',
-            text: '$error',
-            icon: 'error',
-            confirmButtonText: 'Aceptar'
-        });
-    </script>";
-}
-?>
-
-<h2>Modificar Oferta</h2>
-<div class="contenedor-producto cuadro">
-    <form id="formModificarOferta" action="modificar_oferta.php?oferta=<?php echo $oferta_id; ?>" method="POST">
-        <!-- Selección de tipo de oferta -->
-        <div style="display: flex; flex-direction: row; margin-top: 20px;">
-            <div style="width: 40%;">
-                <p style="text-align: left;" for="canjeable_porcentual">Tipo de oferta:</p>
-                <select id="canjeable_porcentual" name="canjeable_porcentual">
-                    <option value="Canjeable" <?php echo $oferta['Tipo'] == 'Canjeable' ? 'selected' : ''; ?>>Canjeable</option>
-                    <option value="Porcentual" <?php echo $oferta['Tipo'] == 'Porcentual' ? 'selected' : ''; ?>>Porcentual</option>
-                </select>
-            </div>
-            <div style="width: 40%; margin-left: 5%;">
-                <p style="text-align: left;" for="valor">Valor de la oferta:</p>
-                <input type="number" id="valor" name="valor" step="0.01" value="<?php echo $oferta['Valor']; ?>" required>
-            </div>
+    <h1>Modificar Promoción</h1>
+    <form action="modificar_promocion.php?oferta=<?php echo $oferta_id; ?>" method="POST">
+        <!-- Producto (Solo Lectura) -->
+        <div>
+            <label>Producto:</label>
+            <input type="text" value="<?php echo $oferta['ProductoNombre']; ?>" readonly style="width: 100%;">
         </div>
 
-        <!-- Fechas de despliegue y expiración -->
-        <div style="display: flex; flex-direction: row; margin-top: 20px;">
-            <div style="width: 40%;">
-                <p style="text-align: left;" for="despliegue">Fecha de despliegue:</p>
-                <input type="date" id="despliegue" name="despliegue" value="<?php echo $oferta['Despliegue']; ?>" required>
-            </div>
-            <div style="width: 40%; margin-left: 5%;">
-                <p style="text-align: left;" for="expiracion">Fecha de expiración:</p>
-                <input type="date" id="expiracion" name="expiracion" value="<?php echo $oferta['Expiracion']; ?>" required>
-            </div>
+        <!-- Tipo de oferta y valor -->
+        <div>
+            <label for="tipo_oferta">Tipo de Oferta:</label>
+            <select id="tipo_oferta" name="tipo_oferta" required>
+                <option value="Canjeable" <?php echo ($oferta['TipoOferta'] === 'Canjeable') ? 'selected' : ''; ?>>Dinero Canjeable</option>
+                <option value="Porcentual" <?php echo ($oferta['TipoOferta'] === 'Porcentual') ? 'selected' : ''; ?>>Descuento Porcentual</option>
+            </select>
+        </div>
+        <div>
+            <label for="valor_oferta">Valor de la Oferta:</label>
+            <input type="number" id="valor_oferta" name="valor_oferta" value="<?php echo $oferta['ValorOferta']; ?>" required>
         </div>
 
-        <!-- Botón para guardar cambios -->
-        <div class="botones-condiciones" style="margin-top: 20px; display: flex; justify-content: flex-end;">
-            <button type="button" id="btnGuardarCambios">Guardar Cambios</button>
+        <!-- Condición -->
+        <div>
+            <label for="tipo_condicion">Tipo de Condición:</label>
+            <select id="tipo_condicion" name="tipo_condicion" required>
+                <option value="Temporada" <?php echo ($oferta['TipoCondicion'] === 'Temporada') ? 'selected' : ''; ?>>Temporada</option>
+                <option value="Cantidad de compras" <?php echo ($oferta['TipoCondicion'] === 'Cantidad de compras') ? 'selected' : ''; ?>>Cantidad de Compras</option>
+                <option value="Productos comprados" <?php echo ($oferta['TipoCondicion'] === 'Productos comprados') ? 'selected' : ''; ?>>Productos Comprados</option>
+            </select>
         </div>
+        <div>
+            <label for="despliegue">Fecha de Despliegue:</label>
+            <input type="date" id="despliegue" name="despliegue" value="<?php echo $oferta['Despliegue']; ?>" required>
+        </div>
+        <div>
+            <label for="expiracion">Fecha de Expiración (Opcional):</label>
+            <input type="date" id="expiracion" name="expiracion" value="<?php echo $oferta['Expiracion']; ?>">
+        </div>
+        <div>
+            <label for="cantidad_usos">Cantidad de Usos (Opcional):</label>
+            <input type="number" id="cantidad_usos" name="cantidad_usos" value="<?php echo $oferta['CantidadUsos']; ?>">
+        </div>
+
+        <!-- Botón de guardar -->
+        <button type="submit">Guardar Cambios</button>
     </form>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const selectCanjeablePorcentual = document.getElementById('canjeable_porcentual');
-    const valorInput = document.getElementById('valor');
+    <script>
+        // Mostrar u ocultar las condiciones según el tipo seleccionado
+        document.getElementById('tipo_condicion').addEventListener('change', function() {
+            const tipoCondicion = this.value;
+            const isTemporada = tipoCondicion === 'Temporada';
+            const isCantidadCompras = tipoCondicion === 'Cantidad de compras';
+            const isProductosComprados = tipoCondicion === 'Productos comprados';
 
-    // Ajustar el valor máximo del input "valor"
-    function ajustarValorMaximo() {
-        let maxValue = 0;
-        if (selectCanjeablePorcentual.value === 'Canjeable') {
-            maxValue = 1000;
-        } else if (selectCanjeablePorcentual.value === 'Porcentual') {
-            maxValue = 100;
-        }
-
-        valorInput.oninput = function () {
-            let value = parseFloat(valorInput.value);
-            if (value < 1) valorInput.value = 1;
-            if (value > maxValue) valorInput.value = maxValue;
-        };
-
-        // Validar el valor actual
-        let currentValue = parseFloat(valorInput.value);
-        if (currentValue > maxValue) {
-            valorInput.value = maxValue;
-        }
-    }
-
-    ajustarValorMaximo();
-    selectCanjeablePorcentual.addEventListener('change', ajustarValorMaximo);
-
-    // Confirmación antes de enviar el formulario
-    document.getElementById('btnGuardarCambios').addEventListener('click', function () {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: "¿Deseas guardar los cambios realizados?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, guardar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('formModificarOferta').submit();
-            }
+            document.getElementById('condiciones_temporada').style.display = isTemporada ? 'block' : 'none';
+            document.getElementById('condiciones_cantidad_compras').style.display = isCantidadCompras ? 'block' : 'none';
+            document.getElementById('condiciones_productos_comprados').style.display = isProductosComprados ? 'block' : 'none';
         });
-    });
-});
-</script>
+
+        // Validación y envío del formulario
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevenir el envío directo
+
+            const tipoOferta = document.getElementById('tipo_oferta').value;
+            const valorOferta = parseFloat(document.getElementById('valor_oferta').value) || 0;
+            const tipoCondicion = document.getElementById('tipo_condicion').value;
+
+            // Valores específicos según la condición seleccionada
+            const despliegue = document.getElementById('despliegue') ? document.getElementById('despliegue').value : null;
+            const expiracion = document.getElementById('expiracion') ? document.getElementById('expiracion').value : null;
+            const cantidadUsos = document.getElementById('cantidad_usos') ? parseInt(document.getElementById('cantidad_usos').value) || null : null;
+
+            console.log('Valores obtenidos del formulario:');
+            console.log('Tipo de oferta:', tipoOferta);
+            console.log('Valor de oferta:', valorOferta);
+            console.log('Tipo de condición:', tipoCondicion);
+            console.log('Rango de validación:', despliegue);
+            console.log('Expiración:', expiracion);
+            console.log('Cantidad de usos:', cantidadUsos);
+
+            // Validaciones generales
+            if (valorOferta <= 0) {
+                Swal.fire({
+                    title: 'Error en el valor de la oferta',
+                    text: 'El valor de la oferta debe ser mayor que 0.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Validación por tipo de condición
+            if (tipoCondicion === 'Temporada') {
+                if (!despliegue || !expiracion) {
+                    Swal.fire({
+                        title: 'Error en las fechas de la temporada',
+                        text: 'Debes ingresar el rango de validación y la fecha de expiración.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
+                if (new Date(despliegue) >= new Date(expiracion)) {
+                    Swal.fire({
+                        title: 'Error en las fechas',
+                        text: 'La fecha de expiración debe ser posterior al rango de validación.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
+            }
+
+            if (tipoCondicion === 'Cantidad de compras' || tipoCondicion === 'Productos comprados') {
+                if (cantidadUsos !== null && cantidadUsos <= 0) {
+                    Swal.fire({
+                        title: 'Error en la cantidad de usos',
+                        text: 'La cantidad de usos debe ser mayor que 0.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
+            }
+
+            // Confirmación final y envío del formulario
+            Swal.fire({
+                title: '¿Guardar Cambios?',
+                text: "¿Estás seguro de que deseas guardar los cambios en esta promoción?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit(); // Enviar el formulario
+                }
+            });
+        });
+    </script>
+
 
 </body>
+
 </html>

@@ -9,7 +9,7 @@ if (isset($_SESSION['id_usuario'])) {
 }
 
 // Consultar la cantidad de productos visibles
-$sql_cantidad = "SELECT COUNT(*) AS total_productos FROM producto WHERE Visibilidad = 1";
+$sql_cantidad = "SELECT COUNT(*) AS total_productos FROM producto WHERE Visibilidad = 1 AND PK_Producto > 0";
 $result_cantidad = $conexion->query($sql_cantidad);
 $total_productos = $result_cantidad->fetch_assoc()['total_productos'];
 
@@ -141,7 +141,7 @@ $total_productos = $result_cantidad->fetch_assoc()['total_productos'];
             $ruta_logo = '../img/logo.png'; // Ruta del logo por defecto
 
             // Consulta a la base de datos para obtener los productos
-            $sql = "SELECT * FROM producto WHERE Visibilidad = 1";
+            $sql = "SELECT * FROM producto WHERE Visibilidad = 1 AND PK_Producto > 0";
             $productos = $conexion->query($sql);
 
             // Verificar si hay resultados
