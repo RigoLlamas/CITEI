@@ -1,6 +1,7 @@
 <?php
 // Incluir archivos necesarios
 include '../php/conexion.php';
+include '../automatizacion/ejecutor_promociones.php';
 //include '../scripts/verificar_dia.php';
 
 // Consulta para obtener lista de promociones
@@ -22,9 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tipo_condicion === 'Temporada') {
         $expiracion = $conexion->real_escape_string($_POST['expiracion']);
         $query_condicion = "INSERT INTO condiciones (Tipo, LimiteTiempo)
-                            VALUES (?, ?, ?)";
+                            VALUES (?, ?)";
         $stmt_cond = mysqli_prepare($conexion, $query_condicion);
-        mysqli_stmt_bind_param($stmt_cond, 'ssi', $tipo_condicion, $expiracion);
+        mysqli_stmt_bind_param($stmt_cond, 'ss', $tipo_condicion, $expiracion);
     } else {
         if ($tipo_condicion === 'Productos comprados') {
             $valor_condicion = $conexion->real_escape_string($_POST['cantidad_productos']);
