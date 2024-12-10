@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/geocoding.php';
 
 session_start();
 
@@ -16,8 +17,36 @@ $num_interior = $conexion->real_escape_string($_POST['num_interior']);
 $municipio = (int)$_POST['municipio'];
 $notificaciones = (int)$_POST['notificacion'];
 
+if ($municipio == 0) {
+    $direccion_completa = $calle . " " . $num_exterior;
+} else {
+    $direccion_completa = $calle . " " . $num_exterior . ", Municipio ID " . $municipio;
+}
+
+$coordenadas = obtenerCoordenadas($direccion_completa);
+
+if ($coordenadas) {
+    $latitud = $coordenadas['latitud'];
+    $longitud = $coordenadas['longitud'];
+} else {
+    $latitud = null;
+    $longitud = null;
+}
+
 // Consulta para actualizar los datos del usuario
-$sql = "UPDATE usuarios SET Nombres = '$nombre', Apellidos = '$apellidos', Telefono = '$telefono', Empresa = '$empresa', Calle = '$calle', NumExterior = '$num_exterior', NumInterior = '$num_interior', FK_Municipio = $municipio, Notificaciones = $notificaciones WHERE PK_Usuario = $pk_usuario";
+$sql = "UPDATE usuarios 
+        SET Nombres = '$nombre', 
+            Apellidos = '$apellidos', 
+            Telefono = '$telefono', 
+            Empresa = '$empresa', 
+            Calle = '$calle', 
+            NumExterior = '$num_exterior', 
+            NumInterior = '$num_interior', 
+            FK_Municipio = $municipio, 
+            Notificaciones = $notificaciones, 
+            Latitud = " . ($latitud !== null ? "'$latitud'" : "NULL") . ", 
+            Longitud = " . ($longitud !== null ? "'$longitud'" : "NULL") . " 
+        WHERE PK_Usuario = $pk_usuario";
 
 if (mysqli_query($conexion, $sql)) {
     echo "Perfil actualizado correctamente.";
@@ -27,7 +56,5 @@ if (mysqli_query($conexion, $sql)) {
 
 mysqli_close($conexion);
 
-// Redirigir a la página de perfil o mostrar un mensaje de éxito
 header("Location: perfil_usuario.php?mensaje=Perfil actualizado");
 exit();
-?>

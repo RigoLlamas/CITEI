@@ -1,9 +1,5 @@
 <?php
 session_start();
-
-print_r($_SESSION); // Remove or comment this in production
-
-// Incluir la conexión a la base de datos
 include '../php/conexion.php';
 
 if (isset($_SESSION['codigo_verificacion'])) {
@@ -18,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $codigo_ingresado = $_POST['clave'];
 
     if ($codigo_ingresado == $codigo_enviado) {
+        include '../php/geocoding.php';
         $nombre = trim($_SESSION['nombre']);
         $apellidos = trim($_SESSION['apellidos']);
         $email = trim($_SESSION['email']);
@@ -31,9 +28,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $num_exterior = trim($_SESSION['num_exterior']);
         $notificacion = isset($_SESSION['notificacion']) && $_SESSION['notificacion'] !== '' ? (int)$_SESSION['notificacion'] : 0;
 
-        $sql = "INSERT INTO usuarios (FK_Municipio, Nombres, Apellidos, Empresa, Calle, Correo, Clave, Telefono, NumInterior, NumExterior, Notificaciones, CP)
-        VALUES ('$municipio', '$nombre', '$apellidos', '$empresa', '$calle', '$email', '$contrasena', '$numero', '$num_interior', '$num_exterior','$notificacion', '$codigo_postal')";
+        if ($municipio == NULL) {
+            $direccion_completa = $calle . " " . $num_exterior . ", CP " . $codigo_postal;
+        } else {
+            $direccion_completa = $calle . " " . $num_exterior . ", " . $municipio . ", CP " . $codigo_postal;
+        }
 
+        $coordenadas = obtenerCoordenadas($direccion_completa);
+
+        if ($coordenadas) {
+            $latitud = $coordenadas ? $coordenadas['latitud'] : "NULL";
+            $longitud = $coordenadas ? $coordenadas['longitud'] : "NULL";
+        } else {
+            $latitud = "NULL";
+            $longitud = "NULL";
+        }
+
+        $sql = "INSERT INTO usuarios (FK_Municipio, Nombres, Apellidos, Empresa, Calle, Correo, Clave, Telefono, NumInterior, NumExterior, Notificaciones, CP, Latitud, Longitud)
+            VALUES ('$municipio', '$nombre', '$apellidos', '$empresa', '$calle', '$email', '$contrasena', '$numero', '$num_interior', '$num_exterior', '$notificacion', '$codigo_postal', '$latitud', '$longitud')";
         if ($conexion->query($sql) === TRUE) {
             header("Location: ../login/login.html");
             exit();
@@ -78,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             document.getElementById('clave').placeholder = "Clave incorrecta, intenta de nuevo";
         <?php endif; ?>
     </script>
-    
+
 </body>
 
 </html>
