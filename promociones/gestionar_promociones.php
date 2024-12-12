@@ -18,10 +18,9 @@ if (isset($_GET['action'])) {
             // Envía una respuesta de éxito al cliente
             echo "Ofertas generadas correctamente.";
         } elseif ($action === 'actualizar_ofertas') {
-            $stmt = $conexion->prepare("CALL AsignarOfertasClientes()");
+            $stmt = $conexion->prepare("CALL AsignarOfertasATodosLosClientes()");
             $stmt->execute();
-            // Envía una respuesta de éxito al cliente
-            echo "Ofertas actualizadas correctamente.";
+            echo "Ofertas asignadas a todos los clientes correctamente.";
         } else {
             echo "Acción no reconocida.";
         }
@@ -39,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $valor_oferta = floatval($conexion->real_escape_string($_POST['valor_oferta']));
     $tipo_condicion = $conexion->real_escape_string($_POST['tipo_condicion']);
     $despliegue = !empty($_POST['despliegue']) ? $conexion->real_escape_string($_POST['despliegue']) : date('Y-m-d');
-    $cantidad_usos = isset($_POST['cantidad_usos']) ? intval($_POST['cantidad_usos']) : NULL; 
+    $cantidad_usos = isset($_POST['cantidad_usos']) ? intval($_POST['cantidad_usos']) : NULL;
 
     if ($tipo_condicion === 'Temporada') {
         $expiracion = $conexion->real_escape_string($_POST['expiracion']);

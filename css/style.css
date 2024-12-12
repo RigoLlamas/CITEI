@@ -929,6 +929,23 @@ gmp-map {
     overflow-y: auto;
 }
 
+.mensaje-promociones {
+    text-align: center;
+    background-color: var(--gris-claro);
+    max-width: 600px; /* Ancho máximo */
+}
+
+.mensaje-promociones h3 {
+    font-size: 1.5rem;
+    color: #ff6b6b; /* Rojo suave */
+    margin-bottom: 10px;
+}
+
+.mensaje-promociones p {
+    font-size: 1rem;
+    color: #555; /* Gris suave */
+}
+
 @media (max-width: 900px) {
     .contenedor-promociones {
         grid-template-columns: repeat(2, 1fr); /* Cambia a dos columnas en pantallas más pequeñas */
