@@ -72,6 +72,7 @@ WHERE o.Oferta = ?
 
     // Actualizar la oferta si se envió el formulario
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $nombre_producto = $conexion->real_escape_string($_POST['nombre_producto']);
         $tipo_oferta = $conexion->real_escape_string($_POST['tipo_oferta']);
         $valor_oferta = floatval($_POST['valor_oferta']);
         $tipo_condicion = $conexion->real_escape_string($_POST['tipo_condicion']);
@@ -125,7 +126,7 @@ WHERE o.Oferta = ?
 
             // Generar descripción automática
             $producto = $oferta['Producto'];
-            $descripcion = "En tu siguiente compra recibirás una oferta de $tipo_oferta con un descuento de $valor_oferta, a partir de $despliegue en productos $producto.";
+            $descripcion = "En tu siguiente compra recibirás una oferta de $tipo_oferta con un descuento de $valor_oferta, a partir de $despliegue en productos $nombre_producto.";
 
             // Actualizar la oferta 
             $query_oferta = "UPDATE ofertas SET Tipo = ?, Valor = ?, Despliegue = ?, Condicion = ?, Descripcion = ? WHERE Oferta = ?";
@@ -162,8 +163,8 @@ WHERE o.Oferta = ?
         <form id="formPromocion" action="modificar_oferta.php?oferta=<?php echo $oferta_id; ?>" method="POST">
             <!-- Producto (Solo Lectura) -->
             <div>
-                <input type="hidden" value="<?php echo $oferta['ProductoNombre'] ?>">
-                <label>Producto:</label>
+                <label for="nombre_producto">Producto:</label>
+                <input type="hidden" id="nombre_producto" name="nombre_producto" value="<?php echo $oferta['ProductoNombre'] ?>">
                 <input type="text" value="<?php echo $oferta['ProductoNombre'] ?>" disabled>
             </div>
             <!-- Tipo de oferta y valor -->

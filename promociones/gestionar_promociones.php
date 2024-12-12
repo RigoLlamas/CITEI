@@ -64,10 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Obtener el ID de la condición insertada
         $condicion_id = mysqli_insert_id($conexion);
 
+        $query_nombre_producto = "SELECT Nombre FROM producto WHERE PK_Producto = ?";
+        $stmt_producto = $conexion->prepare($query_nombre_producto);
+        $stmt_producto->bind_param('i', $producto);
+        $stmt_producto->execute();
+        $nombre_producto = $stmt_producto->get_result();
+
         $query_oferta = "INSERT INTO ofertas (Tipo, Valor, Producto, Descripcion, Estado, Despliegue, Condicion)
                          VALUES (?, ?, ?, ?, 'En revisión', ?, ?)";
         $stmt = mysqli_prepare($conexion, $query_oferta);
-        $descripcion = "En tu siguiente compra recibirás una oferta de $tipo_oferta con un descuento de $valor_oferta, a partir de $despliegue en productos $producto.";
+        $descripcion = "En tu siguiente compra recibirás una oferta de $tipo_oferta con un descuento de $valor_oferta, a partir de $despliegue en productos $nombre_producto.";
         mysqli_stmt_bind_param($stmt, 'sdisss', $tipo_oferta, $valor_oferta, $producto, $descripcion, $despliegue, $condicion_id);
 
         if (mysqli_stmt_execute($stmt)) {
