@@ -1,8 +1,5 @@
 <?php
-// Incluir archivos necesarios
 include '../php/conexion.php';
-include '../automatizacion/ejecutor_promociones.php';
-//include '../scripts/verificar_dia.php';
 
 // Consulta para obtener lista de promociones
 $sql_lista = "
@@ -12,13 +9,37 @@ $sql_lista = "
 ";
 $resultado = mysqli_query($conexion, $sql_lista);
 
+if (isset($_GET['action'])) {
+    $action = $_GET['action'];
+    try {
+        if ($action === 'generar_ofertas') {
+            $stmt = $conexion->prepare("CALL GenerarOfertasAutomaticas()");
+            $stmt->execute();
+            // Envía una respuesta de éxito al cliente
+            echo "Ofertas generadas correctamente.";
+        } elseif ($action === 'actualizar_ofertas') {
+            $stmt = $conexion->prepare("CALL AsignarOfertasClientes()");
+            $stmt->execute();
+            // Envía una respuesta de éxito al cliente
+            echo "Ofertas actualizadas correctamente.";
+        } else {
+            echo "Acción no reconocida.";
+        }
+    } catch (Exception $e) {
+        // Muestra el error capturado
+        echo "Error: " . $e->getMessage();
+    }
+    exit;
+}
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $producto = $_POST['producto'];
     $tipo_oferta = $conexion->real_escape_string($_POST['tipo_oferta']);
     $valor_oferta = floatval($conexion->real_escape_string($_POST['valor_oferta']));
     $tipo_condicion = $conexion->real_escape_string($_POST['tipo_condicion']);
     $despliegue = !empty($_POST['despliegue']) ? $conexion->real_escape_string($_POST['despliegue']) : date('Y-m-d');
-    $cantidad_usos = isset($_POST['cantidad_usos']) ? intval($_POST['cantidad_usos']) : 0; // Nuevo campo
+    $cantidad_usos = isset($_POST['cantidad_usos']) ? intval($_POST['cantidad_usos']) : NULL; 
 
     if ($tipo_condicion === 'Temporada') {
         $expiracion = $conexion->real_escape_string($_POST['expiracion']);
@@ -166,8 +187,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="number" id="cantidad_compras" name="cantidad_compras" style="width: 100%;">
                     </div>
                     <div>
-                        <label for="limite_uso_compras">Límite de Uso:</label>
-                        <input type="number" id="limite_uso_compras" name="limite_uso_compras" style="width: 100%;" placeholder="Límite de uso para esta condición">
+                        <label for="cantidad_usos">Límite de Uso:</label>
+                        <input type="number" id="cantidad_usos" name="cantidad_usos" style="width: 100%;" placeholder="Límite de uso para esta condición">
                     </div>
                 </div>
 
@@ -181,8 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="number" id="cantidad_productos" name="cantidad_productos" style="width: 100%;">
                     </div>
                     <div>
-                        <label for="limite_uso_compras">Límite de Uso:</label>
-                        <input type="number" id="limite_uso_compras" name="limite_uso_compras" style="width: 100%;" placeholder="Límite de uso para esta condición">
+                        <label for="cantidad_usos">Límite de Uso:</label>
+                        <input type="number" id="cantidad_usos" name="cantidad_usos" style="width: 100%;" placeholder="Límite de uso para esta condición">
                     </div>
                 </div>
             </div>
@@ -200,10 +221,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($resultado && mysqli_num_rows($resultado) > 0) {
                     while ($oferta = mysqli_fetch_assoc($resultado)) {
                         echo "<li>";
-                        echo "Estado: " . $oferta['Estado'] . "--> Producto: " . $oferta['ProductoNombre'] . " - Tipo: " . $oferta['Tipo'] . " (" . $oferta['Valor'] . ") Despliegue: " . $oferta['Despliegue'];
+                        echo "Estado: " . $oferta['Estado'] . " --> Producto: " . $oferta['ProductoNombre'] . " - Tipo: " . $oferta['Tipo'] . " (" . $oferta['Valor'] . ") Despliegue: " . $oferta['Despliegue'];
                         echo "<div>";
                         echo "<a href='modificar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Modificar</a> | ";
-                        echo "<a href='desplegar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Desplegar</a> | ";
+
+                        if ($oferta['Estado'] !== 'Activada') {
+                            echo "<a href='desplegar_oferta.php?oferta=" . $oferta['Oferta'] . "'>Desplegar</a> | ";
+                        }
+
                         echo "<a href='bajar_oferta.php?oferta=" . $oferta['Oferta'] . "' class='btnEliminarPromocion'>Eliminar</a>";
                         echo "</div>";
                         echo "</li>";
@@ -213,6 +238,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 ?>
             </ul>
+        </div>
+
+        <div class="acciones-promociones">
+            <button id="btnGenerarOfertas">Generar Ofertas Automáticas</button>
+            <button id="btnActualizarOfertas">Actualizar Ofertas para Clientes</button>
         </div>
     </div>
 
@@ -358,8 +388,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
 
-
-
         document.querySelectorAll('.btnEliminarPromocion').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -379,6 +407,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         window.location.href = url;
                     }
                 });
+            });
+        });
+
+        document.getElementById('btnGenerarOfertas').addEventListener('click', function() {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Se generarán ofertas automáticamente para los productos seleccionados.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, generar!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('gestionar_promociones.php?action=generar_ofertas')
+                        .then(response => response.text())
+                        .then(data => {
+                            Swal.fire({
+                                title: 'Éxito!',
+                                text: data,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.href = 'gestionar_promociones.php';
+                            });
+                        })
+                        .catch(error => {
+                            Swal.fire(
+                                'Error!',
+                                'Hubo un problema al generar las ofertas.',
+                                'error'
+                            );
+                            console.error('Error:', error);
+                        });
+                }
+            });
+        });
+
+
+        document.getElementById('btnActualizarOfertas').addEventListener('click', function() {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Se actualizarán las ofertas para los clientes que cumplen los requisitos.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, actualizar!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('gestionar_promociones.php?action=actualizar_ofertas')
+                        .then(response => response.text())
+                        .then(data => {
+                            Swal.fire({
+                                title: 'Éxito!',
+                                text: data,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.href = 'gestionar_promociones.php';
+                            });
+                        })
+                        .catch(error => {
+                            Swal.fire(
+                                'Error!',
+                                'Hubo un problema al actualizar las ofertas.',
+                                'error'
+                            );
+                            console.error('Error:', error);
+                        });
+                }
             });
         });
     </script>

@@ -192,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
                                     <td><strong>Estado:</strong></td>
                                     <td>
                                         <select name="estado_<?php echo $pedido['NumVenta']; ?>" onchange="actualizarEstado(<?php echo $pedido['NumVenta']; ?>, this.value)">
-                                            <option value="Pendiente" <?php echo $pedido['Estado'] == 'Pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                            <option value="Solicitado" <?php echo $pedido['Estado'] == 'Solicitado' ? 'selected' : ''; ?>>Solicitado</option>
                                             <option value="En almacen" <?php echo $pedido['Estado'] == 'En almacen' ? 'selected' : ''; ?>>En almacen</option>
                                             <option value="Entrega parcial" <?php echo $pedido['Estado'] == 'Entrega parcial' ? 'selected' : ''; ?>>Entrega parcial</option>
                                             <option value="Cancelado" <?php echo $pedido['Estado'] == 'Cancelado' ? 'selected' : ''; ?>>Cancelado</option>

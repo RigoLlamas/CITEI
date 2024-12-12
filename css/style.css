@@ -941,8 +941,19 @@ gmp-map {
     }
 }
 
+.acciones-promociones{
+    display: flex;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.acciones-promociones button{
+    margin: 1rem;
+    width: 40%;
+    max-width: 20rem;
+}
+
 /* Lista promociones */
-/* Estilo para el contenedor de la lista de promociones */
 .lista-promociones {
     margin: 20px auto;
     padding: 20px;
