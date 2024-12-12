@@ -5,18 +5,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const paypalButton = document.getElementById('paypal-button-container');
     const botonesEliminar = document.querySelectorAll('.eliminar-carrito');
 
-    // Función para verificar si el carrito está vacío
+    // Obtener el descuento aplicado desde PHP
+    const descuentoAplicado = parseFloat(document.querySelector('p.descuento').textContent.replace('Descuento aplicado: $', '')) || 0;
+
+    // Función para verificar si el carrito está vacío o el total es cero
     function verificarCarritoVacio() {
         const productosRestantes = document.querySelectorAll('.producto_carrito');
-        if (productosRestantes.length === 0) {
-            // Si no hay productos, deshabilitar el botón de PayPal
-            paypalButton.style.display = 'none'; // Ocultar el contenedor de PayPal
+        const totalText = totalElement.textContent;
+        const totalNumero = parseFloat(totalText.replace('Costo total: $', ''));
+    
+        if (productosRestantes.length === 0 || totalNumero <= 0) {
+            // Si no hay productos o el total es cero o negativo, ocultar el botón de PayPal
+            if (paypalButton) {
+                paypalButton.style.display = 'none';
+            }
         } else {
-            // Si hay productos, mostrar el botón de PayPal
-            paypalButton.style.display = 'block'; // Mostrar el botón de PayPal
+            // Si hay productos y el total es positivo, mostrar el botón de PayPal
+            if (paypalButton) {
+                paypalButton.style.display = 'block';
+            }
         }
     }
-    
 
     verificarCarritoVacio();
 
@@ -37,9 +46,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const subtotal = cantidad * precio;
             totalCarrito += subtotal;
         });
-        totalElement.textContent = 'Costo total: $' + totalCarrito.toFixed(2); // Actualizar el total en el HTML
-        console.log('Costo total: $' + totalCarrito.toFixed(2));
+
+        // Restar el descuento aplicado
+        const totalFinal = totalCarrito - descuentoAplicado;
+
+        // Actualizar el total en el HTML
+        totalElement.textContent = 'Costo total: $' + totalFinal.toFixed(2);
+        console.log('Costo total: $' + totalFinal.toFixed(2));
         
+        // Verificar si el carrito está vacío o el total es cero
+        verificarCarritoVacio();
     }
 
     productos.forEach(producto => {
@@ -82,12 +98,16 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: datos
         })
-        .then(response => response.text())
+        .then(response => response.json())
         .then(data => {
-            console.log('Respuesta del servidor:', data);
+            if (data.status !== 'success') {
+                console.error('Error al actualizar la cantidad:', data.message);
+                Swal.fire('Error', 'No se pudo actualizar la cantidad del producto.', 'error');
+            }
         })
         .catch(error => {
             console.error('Error al actualizar la cantidad:', error);
+            Swal.fire('Error', 'Ocurrió un problema al actualizar la cantidad del producto.', 'error');
         });
     }
 
@@ -123,17 +143,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: `productoId=${productoId}`
             })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                console.log('Respuesta del servidor:', data);
-                // Remover el producto del DOM
-                const productoElemento = boton.closest('.producto_carrito');
-                productoElemento.remove();
-                actualizarTotal();
-                verificarCarritoVacio();
+                if (data.status === 'success') {
+                    console.log('Producto eliminado correctamente:', data.message);
+                    // Remover el producto del DOM
+                    const productoElemento = boton.closest('.producto_carrito');
+                    productoElemento.remove();
+                    actualizarTotal();
+                        location.reload();
+                } else {
+                    console.error('Error al eliminar el producto:', data.message);
+                    Swal.fire('Error', 'No se pudo eliminar el producto del carrito.', 'error');
+                }
             })
             .catch(error => {
                 console.error('Error al eliminar el producto:', error);
+                Swal.fire('Error', 'Ocurrió un problema al eliminar el producto del carrito.', 'error');
             });
         });
     });
@@ -144,11 +170,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Calcular el total del carrito
             let total = 0;
             let productos = obtenerProductosDelCarrito();
-    
+
             productos.forEach(function(producto) {
                 total += producto.cantidad * producto.precio;
             });
-    
+
+            // Restar el descuento aplicado
+            total -= descuentoAplicado;
+            if (total < 0) total = 0;
+
+            // Actualizar el total en el HTML
+            totalElement.textContent = 'Costo total: $' + total.toFixed(2);
+
             // Crear la orden con el total en pesos mexicanos
             return actions.order.create({
                 purchase_units: [{
@@ -161,9 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
         onApprove: function(data, actions) {
             // Captura el pago después de que el usuario apruebe la transacción
             return actions.order.capture().then(function(details) {
-    
+
                 let productos = obtenerProductosDelCarrito();
-    
+
                 // Solicitud al servidor para guardar los detalles del pago
                 return fetch('guardar_pedido.php', {
                     method: 'POST',
@@ -185,19 +218,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(datos => {
                     if (datos.status === 'success') {
-                        alert('Pago completado');
+                        Swal.fire('Pago completado', 'Tu compra se ha realizado correctamente.', 'success').then(() => {
+                            // Limpiar el carrito y actualizar el total
+                            limpiarCarrito();
+                            actualizarTotal();
+                            verificarCarritoVacio();
+                        });
+
                         // Crear la cadena con la información de los productos
                         const productosInfo = datos.productos.map((producto) => {
                             return `Producto: ${producto.nombreProducto}, Cantidad: ${producto.cantidad}, Precio: $${producto.precio}`;
                         }).join('\n'); // Unir todos los productos en un solo string
-    
+
                         const datosPedido = {
                             productosInfo: productosInfo,   // Información de todos los productos en un solo campo
                             total: datos.monto,               // Total del pedido (cambiado a totalPago)
                             codigo: datos.codigo,           // Código del pedido
                             clave: datos.clave              // Clave del pedido
                         };
-    
+
                         const datosUsuario = {
                             correo: datos.usuario.Correo,
                             nombre: datos.usuario.Nombres + ' ' + datos.usuario.Apellidos,
@@ -208,28 +247,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             numExterior: datos.usuario.NumExterior,
                             telefono: datos.usuario.Telefono
                         };
-    
-                        actualizarTotal();
-                        verificarCarritoVacio();
+
                         enviarCorreoElectronico(datosPedido, datosUsuario);
                         
                     } else {
                         console.error('Error al guardar el pedido:', datos.message);
+                        Swal.fire('Error', 'No se pudo completar el pedido.', 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error en la solicitud al servidor:', error);
+                    Swal.fire('Error', 'Ocurrió un problema al procesar tu pedido.', 'error');
                 });
             });
         },
         onCancel: function (data) {
             // Manejar cuando el usuario cancela el pago
-            alert('Pago cancelado.');
+            Swal.fire('Pago cancelado', 'Tu pago ha sido cancelado.', 'info');
         },
         onError: function (err) {
             // Manejar errores en el pago
             console.error('Error en el pago:', err);
-            alert('Ocurrió un error con el pago.');
+            Swal.fire('Error', 'Ocurrió un error con el pago.', 'error');
         }
     }).render('#paypal-button-container');
 
@@ -243,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Detalles del pedido:
             ${datosPedido.productosInfo}
     
-            Total: ${datosPedido.total}
+            Total: $${datosPedido.total}
             Código del pedido: ${datosPedido.codigo}
             Clave del pedido: ${datosPedido.clave}
     
@@ -273,14 +312,34 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 console.log('Correo enviado con éxito', response.status, response.text);
-                actualizarTotal();
-                verificarCarritoVacio();
+                // Opcional: Mostrar una notificación al usuario
+                Swal.fire('Correo enviado', 'Se ha enviado un correo de confirmación a tu dirección de correo.', 'success');
             })
             .catch(error => {
                 console.error('Error al enviar el correo:', error);
+                Swal.fire('Error', 'Ocurrió un problema al enviar el correo de confirmación.', 'error');
             });
     }
-    
+
+    function limpiarCarrito() {
+        // Eliminar todos los productos del DOM
+        document.querySelectorAll('.producto_carrito').forEach(producto => producto.remove());
+        // Opcional: Enviar una solicitud al servidor para vaciar el carrito en la base de datos
+        fetch('vaciar_carrito.php', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                console.error('Error al vaciar el carrito:', data.message);
+                Swal.fire('Error', 'No se pudo vaciar el carrito.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al vaciar el carrito:', error);
+            Swal.fire('Error', 'Ocurrió un problema al vaciar el carrito.', 'error');
+        });
+    }
 
     // Función para aplicar la oferta
     document.querySelectorAll('.aplicar-oferta').forEach(boton => {
@@ -295,26 +354,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: datos
             })
-            .then(response => response.text())
-            .then(data => {
-                // Mostrar mensaje de éxito con SweetAlert
-                Swal.fire({
-                    title: 'Oferta aplicada',
-                    text: data,
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar'
-                });
-
-                // Aquí puedes actualizar el total del carrito en la interfaz si lo necesitas
-                actualizarTotal(); 
+            .then(response => response.json())
+            .then(json => {
+                if (json.error) {
+                    // Mostrar mensaje de error con SweetAlert
+                    Swal.fire({
+                        title: 'Error',
+                        text: json.error,
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                } else {
+                    // Mostrar mensaje de éxito con SweetAlert
+                    Swal.fire({
+                        title: 'Oferta aplicada',
+                        text: json.success,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        // Actualizar el total en el cliente
+                        actualizarTotal();
+                        // Opcional: Actualizar visualmente la oferta aplicada
+                        location.reload(); // Recargar la página para reflejar cambios
+                    });
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
+                Swal.fire('Error', 'Ocurrió un problema al aplicar la oferta.', 'error');
             });
         });
     });
-
-    
-    // Inicializar el total al cargar la página
-    actualizarTotal();
 });

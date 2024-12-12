@@ -7,7 +7,7 @@ fetch('../php/obtener_email_config.php')
     .then(config => {
         userID = config.user_id;
         serviceID = config.service_id;
-        templateID = config.template_message; // Usa el nombre correcto del template en config.php
+        templateID = config.template_message;
 
         // Inicializa EmailJS con userID después de cargar la configuración
         emailjs.init(userID);
