@@ -7,9 +7,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $apellidos = $_POST['apellidos'];
     $estado = $_POST['estado'];
     $clave = $_POST['clave'];
+    $horabandera = $_POST['horabandera'];
 
     // Preparar la consulta base para actualizar el repartidor
-    $sql = "UPDATE repartidor SET Nombre = ?, Apellidos = ?, Estado = ?";
+    $sql = "UPDATE repartidor SET Nombre = ?, Apellidos = ?, Estado = ?, HoraBandera = ?";
 
     // Agregar la clave si no está vacía
     if (!empty($clave)) {
@@ -23,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Vincular los parámetros según si la clave es enviada o no
     if (!empty($clave)) {
-        $stmt->bind_param("sssisi", $nombre, $apellidos, $estado, $clave, $nomina);
+        $stmt->bind_param("sssssi", $nombre, $apellidos, $estado, $horabandera, $clave, $nomina);
     } else {
-        $stmt->bind_param("sssi", $nombre, $apellidos, $estado, $nomina);
+        $stmt->bind_param("ssssi", $nombre, $apellidos, $estado, $horabandera, $nomina);
     }
 
     // Ejecutar la consulta
@@ -50,6 +51,7 @@ if (isset($_GET['nomina'])) {
 
     if ($repartidor = mysqli_fetch_assoc($resultado)) {
 ?>
+
         <!DOCTYPE html>
         <html lang="es">
 
@@ -94,9 +96,14 @@ if (isset($_GET['nomina'])) {
                     </div>
 
                     <div style="display: flex; flex-direction: row;">
-                        <div style="width: 60%;">
+                        <div style="width: 30%;">
                             <p>Clave:</p>
                             <input type="password" name="clave" minlength="5" maxlength="50">
+                        </div>
+                        <div style="margin-top: 30px;">
+                            <label for="horabandera">Asignar descanso después de la hora:</label>
+                            <input type="time" id="horabandera" name="horabandera" min="09:00" max="16:00" required
+                                value="<?php echo isset($repartidor['HoraBandera']) ? $repartidor['HoraBandera'] : ''; ?>">
                         </div>
                         <div style="width: 40%;" class="botones-repartidores">
                             <button type="button" id="btnGuardarCambios">Guardar Cambios</button>
@@ -117,7 +124,7 @@ if (isset($_GET['nomina'])) {
             <?php endif; ?>
 
             <script>
-                document.getElementById('btnGuardarCambios').addEventListener('click', function () {
+                document.getElementById('btnGuardarCambios').addEventListener('click', function() {
                     Swal.fire({
                         title: '¿Guardar Cambios?',
                         text: "¿Estás seguro de que deseas guardar los cambios realizados?",
