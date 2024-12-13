@@ -1470,6 +1470,14 @@ gmp-map {
     overflow-y: auto;
 }
 
+.ruta-info{
+    display: flex;
+}
+
+.ruta-info div{
+    width: 50%;
+}
+
 /* Fila Inferior: Mapa */
 .fila-mapa {
     flex: 1;
