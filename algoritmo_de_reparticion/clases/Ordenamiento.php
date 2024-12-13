@@ -1,12 +1,18 @@
 <?php
 
 include 'Repartidor.php';
+include 'Vehiculo.php';
+include 'Pedido.php';
 
-class Ordenamiento {
+class Ordenamiento
+{
     private $apiKey;
     private $conexion;
+    private $exitenForaneos = false;
+    private $foraneo;
 
-    public function __construct($conexion) {
+    public function __construct($conexion)
+    {
         $config = include '../config.php';
         $this->apiKey = $config['api_keys']['google_maps_api_key'];
         $this->conexion = $conexion;
@@ -19,26 +25,32 @@ class Ordenamiento {
     }
 
     // Función para calcular el tiempo de viaje entre dos puntos usando Google Maps API
-    public function calcularTiempoViaje($origenLat, $origenLng, $destinoLat, $destinoLng) {
+    public function calcularTiempoViaje($origenLat, $origenLng, $destinoLat, $destinoLng)
+    {
         $url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={$origenLat},{$origenLng}&destinations={$destinoLat},{$destinoLng}&key={$this->apiKey}";
-        
-        try {
-            $response = file_get_contents($url);
-            if ($response === false) throw new Exception("Error al obtener la respuesta de la API.");
-            
-            $data = json_decode($response, true);
-            if ($data['status'] === 'OK') {
-                return $data['rows'][0]['elements'][0]['duration']['value'];
-            }
-        } catch (Exception $e) {
-            echo "Error al calcular el tiempo de viaje: " . $e->getMessage() . "<br>";
+
+        $response = @file_get_contents($url);
+        if ($response === false) {
+            throw new Exception("Error al obtener la respuesta de la API.");
         }
 
-        return null;  // Retorna null si falla
+        $data = json_decode($response, true);
+        if ($data['status'] !== 'OK') {
+            throw new Exception("API de Google Maps respondió con estado: " . $data['status']);
+        }
+
+        return $data['rows'][0]['elements'][0]['duration']['value'];
     }
 
+
     // Método de Haversine para calcular la distancia entre dos coordenadas
-    public function calcularDistanciaHaversine($lat1, $lon1, $lat2, $lon2) {
+    public function calcularDistanciaHaversine(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        if (is_null($lat1) || is_null($lon1) || is_null($lat2) || is_null($lon2)) {
+            echo "Una o más coordenadas son nulas. No se puede calcular la distancia.<br>";
+            return null;
+        }
+
         $radioTierra = 6378; // Kilómetros
         $difLat = deg2rad($lat2 - $lat1);
         $difLon = deg2rad($lon2 - $lon1);
@@ -46,44 +58,63 @@ class Ordenamiento {
         return $radioTierra * 2 * asin(sqrt($a));
     }
 
-    // Generar ruta óptima utilizando el algoritmo de Dikstra
-    public function generarRutaOptimaVecinoMasCercano($nodos, $inicio) {
-        $ruta = [$inicio];
-        $visitado = [$inicio => true];
-        $nodoActual = $inicio;
-    
-        while (count($ruta) < count($nodos)) {
-            $nodoMasCercano = null;
-            $distanciaMasCorta = INF;
-    
-            foreach ($nodos as $nodo => $coordenadas) {
-                if (!isset($visitado[$nodo])) {
-                    $distancia = $this->calcularDistanciaHaversine(
-                        $nodos[$nodoActual]['latitud'], 
-                        $nodos[$nodoActual]['longitud'], 
-                        $coordenadas['latitud'], 
-                        $coordenadas['longitud']
-                    );
-    
-                    if ($distancia < $distanciaMasCorta) {
-                        $distanciaMasCorta = $distancia;
-                        $nodoMasCercano = $nodo;
-                    }
+    // Implementación del algoritmo de Dijkstra
+    public function generarRutaOptimaDijkstra($nodos, $inicio)
+    {
+        // Inicializar estructuras de datos
+        $distancias = [];
+        $prev = [];
+        $cola = new SplPriorityQueue();
+
+        foreach ($nodos as $nodo => $coordenadas) {
+            $distancias[$nodo] = INF;
+            $prev[$nodo] = null;
+        }
+        $distancias[$inicio] = 0;
+        $cola->insert($inicio, 0);
+
+        while (!$cola->isEmpty()) {
+            $u = $cola->extract();
+
+            foreach ($nodos as $v => $coordenadas) {
+                if ($u == $v) continue;
+                $distancia = $this->calcularDistanciaHaversine(
+                    $nodos[$u]['latitud'],
+                    $nodos[$u]['longitud'],
+                    $coordenadas['latitud'],
+                    $coordenadas['longitud']
+                );
+                $alt = $distancias[$u] + $distancia;
+
+                if ($alt < $distancias[$v]) {
+                    $distancias[$v] = $alt;
+                    $prev[$v] = $u;
+                    $cola->insert($v, -$alt);
                 }
             }
-    
-            $ruta[] = $nodoMasCercano;
-            $visitado[$nodoMasCercano] = true;
-            $nodoActual = $nodoMasCercano;
         }
-    
-        return $ruta;
+
+        // Construir la ruta desde el inicio hasta cada nodo
+        $rutas = [];
+        foreach ($nodos as $nodo => $coordenadas) {
+            if ($nodo == $inicio) continue;
+            $ruta = [];
+            $current = $nodo;
+            while ($prev[$current] !== null) {
+                array_unshift($ruta, $current);
+                $current = $prev[$current];
+            }
+            $rutas[$nodo] = $ruta;
+        }
+
+        return $rutas;
     }
 
     // Función para asignar un pedido al repartidor y registrar en la base de datos
-    private function registrarEnvio($pedido, $repartidor, $vehiculo) {
-        $numVenta = $pedido->pedido;
-    
+    private function registrarEnvio($pedido, $repartidor)
+    {
+        $numVenta = $pedido->getPedido();
+
         // Consulta para obtener el Producto asociado al pedido
         $sqlProducto = "SELECT Producto, Cantidad FROM detalles WHERE NumVenta = ?";
         $stmtProducto = $this->conexion->prepare($sqlProducto);
@@ -91,11 +122,11 @@ class Ordenamiento {
             echo "Error en la preparación de la consulta para obtener el producto: " . $this->conexion->error . "<br>";
             return false;
         }
-        
+
         $stmtProducto->bind_param("i", $numVenta);
         $stmtProducto->execute();
         $resultadoProducto = $stmtProducto->get_result();
-    
+
         if ($resultadoProducto->num_rows > 0) {
             $filaProducto = $resultadoProducto->fetch_assoc();
             $producto = $filaProducto['Producto'];
@@ -105,361 +136,528 @@ class Ordenamiento {
             $stmtProducto->close();
             return false;
         }
-    
+
         // Cerrar la consulta de producto
         $stmtProducto->close();
-    
-        // Inserción en la tabla de envíos
+
+        // Insertar en la tabla de envíos
         $sql = "INSERT INTO envios (OrdenR, Cantidad, Vehiculo, Producto, Repartidor, NumVenta) VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $this->conexion->prepare($sql);   
+        $stmt = $this->conexion->prepare($sql);
         if (!$stmt) {
             echo "Error en la preparación de la consulta: " . $this->conexion->error . "<br>";
             return false;
         }
-    
-        $ordenRuta = 1; // Puedes personalizar este valor si tienes una lógica específica
-    
-        // Asignar los valores correctos a bind_param
-        $stmt->bind_param("iisiii", $ordenRuta, $cantidad, $vehiculo, $producto, $repartidor->nomina, $numVenta);
-    
+
+        // Asumiendo que "Vehiculo" es la Placa del vehículo del repartidor
+        $vehiculoPlaca = $repartidor->getVehiculo() ? $repartidor->getVehiculo()->getPlaca() : null;
+
+        $orden = $repartidor->actualizarOrden();
+        $nomina = $repartidor->getNomina();
+
+        $stmt->bind_param("iisiii", $orden, $cantidad, $vehiculoPlaca, $producto, $nomina, $numVenta);
+
         if ($stmt->execute()) {
             echo "Registro en la base de datos del pedido {$numVenta} completado.<br>";
-    
+
             // Actualizar el estado del pedido a 'En camino'
             if ($this->actualizarEstadoPedido($numVenta, 'En camino')) {
                 echo "Estado del pedido {$numVenta} actualizado a 'En camino'.<br>";
             } else {
                 echo "Error al actualizar el estado del pedido {$numVenta}.<br>";
             }
-    
+
+            $stmt->close();
             return true;
         } else {
             echo "Error al insertar el pedido {$numVenta} en la tabla de envíos: " . $stmt->error . "<br>";
+            $stmt->close();
             return false;
         }
     }
-    
 
-    // Método para verificar y crear un repartidor con vehículo asignado
-    public function crearRepartidoresDisponibles() {
+    // Método para verificar y crear un repartidor con o sin vehículo asignado
+    public function crearRepartidoresDisponibles()
+    {
         $repartidores = [];
-        
-        // Obtener todos los repartidores y vehículos disponibles
-        $sqlRepartidores = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado = 'Disponible'";
-        $resultadoRepartidores = $this->conexion->query($sqlRepartidores);
+
+        // Obtener todos los repartidores disponibles y que no están en descanso
+        $sqlRepartidores = "SELECT Nomina, Nombre, Apellidos, Estado, Latitud, Longitud, Descanso, HoraBandera FROM repartidor WHERE Estado = 'Disponible' AND (Descanso = 0 OR Descanso IS NULL) ";
     
+        $resultadoRepartidores = $this->conexion->query($sqlRepartidores);
+
         if (!$resultadoRepartidores) {
             echo "Error en la consulta de repartidores: " . $this->conexion->error . "<br>";
             return $repartidores;
         }
-        
-        $sqlVehiculos = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado FROM vehiculo WHERE Estado = 'En circulación'";
-        $resultadoVehiculos = $this->conexion->query($sqlVehiculos);
-    
-        if (!$resultadoVehiculos) {
-            echo "Error en la consulta de vehículos: " . $this->conexion->error . "<br>";
-            return $repartidores;
-        }
-    
-        // Verificar que haya repartidores y vehículos disponibles
+
+        // Verificar que haya repartidores disponibles
         if ($resultadoRepartidores->num_rows == 0) {
             echo "No hay repartidores disponibles para asignar.<br>";
             return $repartidores;
         }
-    
-        if ($resultadoVehiculos->num_rows == 0) {
-            echo "No hay vehículos en circulación disponibles para asignar.<br>";
+
+        // Obtener vehículos disponibles
+        $sqlVehiculos = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado, KilometrosRecorridos FROM vehiculo WHERE Estado = 'En circulación'";
+        $resultadoVehiculos = $this->conexion->query($sqlVehiculos);
+
+        if (!$resultadoVehiculos) {
+            echo "Error en la consulta de vehículos: " . $this->conexion->error . "<br>";
             return $repartidores;
         }
-    
-        // Determinar si hay más de un repartidor
-        $esForaneoAsignado = false;
-    
-        // Crear repartidores con vehículos asignados mientras haya ambos recursos disponibles
-        while (($repartidorData = $resultadoRepartidores->fetch_assoc()) && ($vehiculoData = $resultadoVehiculos->fetch_assoc())) {
-            // Si aún no se ha asignado un repartidor foráneo y hay más de uno, hacer al primer candidato foráneo
-            $esForaneo = !$esForaneoAsignado && $resultadoRepartidores->num_rows > 1;
-            
-            $repartidor = new Repartidor(
-                $vehiculoData['Placa'],
-                $repartidorData['Nomina'],
-                $vehiculoData['Largo'],
-                $vehiculoData['Alto'],
-                $vehiculoData['Ancho'],
-                '18:30',
-                $esForaneo
+
+        // Almacenar los vehículos disponibles en un arreglo
+        $vehiculosDisponibles = [];
+        while ($filaVehiculo = $resultadoVehiculos->fetch_assoc()) {
+            $vehiculosDisponibles[] = new Vehiculo(
+                $filaVehiculo['Placa'],
+                $filaVehiculo['Largo'],
+                $filaVehiculo['Alto'],
+                $filaVehiculo['Ancho'],
+                $filaVehiculo['Modelo'],
+                $filaVehiculo['Estado'],
+                $filaVehiculo['KilometrosRecorridos']
             );
-    
-            if ($esForaneo) {
-                $esForaneoAsignado = true; // Asegurar que solo un repartidor sea foráneo
+        }
+
+        // Crear repartidores mientras haya repartidores disponibles
+        while ($repartidorData = $resultadoRepartidores->fetch_assoc()) {
+            // Asignar un vehículo si está disponible
+            $vehiculo = null;
+            if (!empty($vehiculosDisponibles)) {
+                $vehiculo = array_shift($vehiculosDisponibles); // Tomar el primer vehículo disponible
             }
-    
-            // Marcar el repartidor como ocupado en la base de datos
-            $sqlActualizarRepartidor = "UPDATE repartidor SET Estado = 'Ocupado' WHERE Nomina = '{$repartidorData['Nomina']}'";
-            if (!$this->conexion->query($sqlActualizarRepartidor)) {
-                echo "Error al actualizar el estado del repartidor {$repartidorData['Nomina']}: " . $this->conexion->error . "<br>";
-                continue;
-            }
-    
-            // Marcar el vehículo como asignado en la base de datos
-            $sqlActualizarVehiculo = "UPDATE vehiculo SET Estado = 'Asignado' WHERE Placa = '{$vehiculoData['Placa']}'";
-            if (!$this->conexion->query($sqlActualizarVehiculo)) {
-                echo "Error al actualizar el estado del vehículo {$vehiculoData['Placa']}: " . $this->conexion->error . "<br>";
-                continue;
-            }
-    
+
+            // Crear una instancia de Repartidor
+            $repartidor = new Repartidor(
+                $repartidorData['Nomina'],
+                $repartidorData['Nombre'],
+                $repartidorData['Apellidos'],
+                $repartidorData['Latitud'],
+                $repartidorData['Longitud'],
+                $repartidorData['Estado'],
+                $repartidorData['Descanso'],
+                $repartidorData['HoraBandera'],
+                $vehiculo
+            );
+
             // Añadir el repartidor al arreglo de repartidores disponibles
             $repartidores[] = $repartidor;
         }
-    
+
         return $repartidores;
     }
-    
-    
-    
 
-public function obtenerPedidosDesdeBD() {
-    $pedidos = [];
-    $sqlPedidos = "
-        SELECT NumVenta, Estado, FK_Usuario, Fecha 
-        FROM pedidos 
-        WHERE Estado IN ('Entrega parcial', 'En almacen') 
-        ORDER BY 
-            CASE 
-                WHEN Estado = 'Entrega parcial' THEN 1 
-                WHEN Estado = 'En almacen' THEN 2 
-            END, 
-            Fecha ASC
-    ";
-    $resultadoPedidos = $this->conexion->query($sqlPedidos);
 
-    if ($resultadoPedidos->num_rows > 0) {
-        while ($filaPedido = $resultadoPedidos->fetch_assoc()) {
-            $pedidos[] = [
-                'NumVenta' => $filaPedido['NumVenta'],
-                'Estado' => $filaPedido['Estado'],
-                'FK_Usuario' => $filaPedido['FK_Usuario'],
-                'Fecha' => $filaPedido['Fecha'],
-            ];
-        }
-    } else {
-        echo "No hay pedidos en estado de 'Entrega parcial' o 'En almacen'.<br>";
-        return []; // Si no hay pedidos, retorna vacío para detener el proceso
-    }
+    public function obtenerPedidosDesdeBD()
+    {
+        $pedidos = [];
+        $sqlPedidos = "
+            SELECT p.NumVenta, p.Estado, p.FK_Usuario, p.Fecha, p.Foraneo, u.Latitud, u.Longitud
+            FROM pedidos p
+            JOIN usuarios u ON p.FK_Usuario = u.PK_Usuario
+            WHERE p.Estado IN ('Entrega parcial', 'En almacen') 
+            ORDER BY 
+                CASE 
+                    WHEN p.Estado = 'Entrega parcial' THEN 1 
+                    WHEN p.Estado = 'En almacen' THEN 2 
+                END, 
+                p.Fecha ASC
+        ";
+        $resultadoPedidos = $this->conexion->query($sqlPedidos);
 
-    // Procesar detalles para cada pedido
-    foreach ($pedidos as &$pedido) {
-        $pedido = $this->agregarDetallesAPedido($pedido);
-        $pedido = $this->agregarDireccionAPedido($pedido);
-    }
-
-    // Convertir los datos en objetos de la clase Pedido
-    $objetosPedidos = [];
-    foreach ($pedidos as $datos) {
-        $objetosPedidos[] = new Pedido(
-            $datos['NumVenta'],
-            $datos['direccion'],
-            $datos['municipio'],
-            $datos['Estado'],
-            $datos['largo_maximo'],
-            $datos['alto_maximo'],
-            $datos['ancho_maximo'],
-            $datos['volumen_total'],
-            $datos['Fecha'],
-            $datos['cantidad']
-        );
-    }
-
-    return $objetosPedidos;
-}
-
-private function agregarDetallesAPedido($pedido) {
-    $sqlDetalles = "
-        SELECT pr.Largo, pr.Alto, pr.Ancho, d.Cantidad
-        FROM detalles d
-        JOIN producto pr ON d.Producto = pr.PK_Producto
-        WHERE d.NumVenta = {$pedido['NumVenta']}
-    ";
-    
-    $resultadoDetalles = $this->conexion->query($sqlDetalles);
-    
-    // Variables para calcular el volumen total y dimensiones máximas
-    $volumenTotal = 0;
-    $largoMaximo = 0;
-    $altoMaximo = 0;
-    $anchoMaximo = 0;
-    $cantidadTotal = 0;
-
-    if ($resultadoDetalles->num_rows > 0) {
-        // Recorrer cada producto y actualizar el volumen total y las dimensiones máximas
-        while ($filaDetalles = $resultadoDetalles->fetch_assoc()) {
-            $volumenProducto = $filaDetalles['Largo'] * $filaDetalles['Alto'] * $filaDetalles['Ancho'] * $filaDetalles['Cantidad'];
-            $volumenTotal += $volumenProducto;
-            $largoMaximo = max($largoMaximo, $filaDetalles['Largo']);
-            $altoMaximo = max($altoMaximo, $filaDetalles['Alto']);
-            $anchoMaximo = max($anchoMaximo, $filaDetalles['Ancho']);
-            $cantidadTotal += $filaDetalles['Cantidad'];
-        }
-        
-        // Asignar valores calculados al pedido
-        $pedido['volumen_total'] = $volumenTotal;
-        $pedido['largo_maximo'] = $largoMaximo;
-        $pedido['alto_maximo'] = $altoMaximo;
-        $pedido['ancho_maximo'] = $anchoMaximo;
-        $pedido['cantidad'] = $cantidadTotal;
-    } else {
-        echo "No se encontraron detalles para el pedido {$pedido['NumVenta']}.<br>";
-        // Asignar valores predeterminados si no hay detalles
-        $pedido['volumen_total'] = 0;
-        $pedido['largo_maximo'] = 0;
-        $pedido['alto_maximo'] = 0;
-        $pedido['ancho_maximo'] = 0;
-        $pedido['cantidad'] = 0;
-    }
-
-    return $pedido;
-}
-    
-    private function agregarDireccionAPedido($pedido) {
-        $sqlDireccion = "
-            SELECT CONCAT(Calle, ' ', NumExterior, ', ', CP) AS direccion, FK_Municipio AS municipio
-            FROM usuarios
-            WHERE PK_Usuario = {$pedido['FK_Usuario']}
-            LIMIT 1";
-        
-        $resultadoDireccion = $this->conexion->query($sqlDireccion);
-    
-        if ($resultadoDireccion->num_rows > 0) {
-            $filaDireccion = $resultadoDireccion->fetch_assoc();
-            $pedido['direccion'] = $filaDireccion['direccion'];
-            $pedido['municipio'] = $filaDireccion['municipio'];
+        if ($resultadoPedidos->num_rows > 0) {
+            while ($filaPedido = $resultadoPedidos->fetch_assoc()) {
+                $this->exitenForaneos = $filaPedido['Foraneo'] === 'Sí'? true : $this->exitenForaneos;
+                $pedidos[] = [
+                    'NumVenta' => $filaPedido['NumVenta'],
+                    'Estado' => $filaPedido['Estado'],
+                    'FK_Usuario' => $filaPedido['FK_Usuario'],
+                    'Fecha' => $filaPedido['Fecha'],
+                    'Foraneo' => $filaPedido['Foraneo'],
+                    'Latitud' => $filaPedido['Latitud'],
+                    'Longitud' => $filaPedido['Longitud']
+                ];
+            }
         } else {
-            echo "No se encontró dirección para el usuario {$pedido['FK_Usuario']}.<br>";
-            $pedido['direccion'] = "Dirección no disponible";
-            $pedido['municipio'] = "Municipio no disponible";
+            echo "No hay pedidos en estado de 'Entrega parcial' o 'En almacen'.<br>";
+            return []; // Si no hay pedidos, retorna vacío para detener el proceso
         }
-    
+
+        // Procesar detalles para cada pedido
+        foreach ($pedidos as &$pedido) {
+            $pedido = $this->agregardetallesAPedido($pedido);
+        }
+
+        // Convertir los datos en objetos de la clase Pedido
+        $objetosPedidos = [];
+        foreach ($pedidos as $datos) {
+            // Validar que las coordenadas no sean null
+            if (is_null($datos['Latitud']) || is_null($datos['Longitud'])) {
+                echo "Pedido {$datos['NumVenta']} tiene coordenadas nulas. Saltando asignación.<br>";
+                continue; // O manejar de otra manera según tu lógica
+            }
+
+            $objetosPedidos[] = new Pedido(
+                $datos['NumVenta'],
+                '', // Dirección no es necesaria ya que usamos coordenadas
+                '', // Municipio no es necesario si 'Foraneo' es suficiente, pero si lo usas, puedes mantenerlo
+                $datos['Estado'],
+                $datos['largo_maximo'] ?? 0,
+                $datos['alto_maximo'] ?? 0,
+                $datos['ancho_maximo'] ?? 0,
+                $datos['volumen_total'] ?? 0,
+                $datos['Fecha'],
+                $datos['cantidad'] ?? 0,
+                $datos['Foraneo'],
+                floatval($datos['Latitud']),
+                floatval($datos['Longitud'])
+            );
+        }
+
+        return $objetosPedidos;
+    }
+
+    private function agregardetallesAPedido($pedido)
+    {
+        $sqldetalles = "
+            SELECT pr.Largo, pr.Alto, pr.Ancho, d.Cantidad
+            FROM detalles d
+            JOIN producto pr ON d.Producto = pr.PK_Producto
+            WHERE d.NumVenta = ?
+        ";
+
+        $stmtdetalles = $this->conexion->prepare($sqldetalles);
+        if (!$stmtdetalles) {
+            echo "Error en la preparación de la consulta de detalles para el pedido {$pedido['NumVenta']}: " . $this->conexion->error . "<br>";
+            // Asignar valores predeterminados si no se pueden obtener detalles
+            $pedido['volumen_total'] = 0;
+            $pedido['largo_maximo'] = 0;
+            $pedido['alto_maximo'] = 0;
+            $pedido['ancho_maximo'] = 0;
+            $pedido['cantidad'] = 0;
+            return $pedido;
+        }
+
+        $stmtdetalles->bind_param("i", $pedido['NumVenta']);
+        $stmtdetalles->execute();
+        $resultadodetalles = $stmtdetalles->get_result();
+
+        // Variables para calcular el volumen total y dimensiones máximas
+        $volumenTotal = 0;
+        $largoMaximo = 0;
+        $altoMaximo = 0;
+        $anchoMaximo = 0;
+        $cantidadTotal = 0;
+
+        if ($resultadodetalles->num_rows > 0) {
+            // Recorrer cada producto y actualizar el volumen total y las dimensiones máximas
+            while ($filadetalles = $resultadodetalles->fetch_assoc()) {
+                $volumenProducto = $filadetalles['Largo'] * $filadetalles['Alto'] * $filadetalles['Ancho'] * $filadetalles['Cantidad'];
+                $volumenTotal += $volumenProducto;
+                $largoMaximo = max($largoMaximo, $filadetalles['Largo']);
+                $altoMaximo = max($altoMaximo, $filadetalles['Alto']);
+                $anchoMaximo = max($anchoMaximo, $filadetalles['Ancho']);
+                $cantidadTotal += $filadetalles['Cantidad'];
+            }
+
+            // Asignar valores calculados al pedido
+            $pedido['volumen_total'] = $volumenTotal;
+            $pedido['largo_maximo'] = $largoMaximo;
+            $pedido['alto_maximo'] = $altoMaximo;
+            $pedido['ancho_maximo'] = $anchoMaximo;
+            $pedido['cantidad'] = $cantidadTotal;
+        } else {
+            echo "No se encontraron detalles para el pedido {$pedido['NumVenta']}.<br>";
+            // Asignar valores predeterminados si no hay detalles
+            $pedido['volumen_total'] = 0;
+            $pedido['largo_maximo'] = 0;
+            $pedido['alto_maximo'] = 0;
+            $pedido['ancho_maximo'] = 0;
+            $pedido['cantidad'] = 0;
+        }
+
+        $stmtdetalles->close();
+
         return $pedido;
     }
-    
-    // Asigna pedidos a los repartidores disponibles y registra cada asignación en la base de datos
-    public function asignarNodosARepartidores($pedidos, $repartidores, $sede) {
+
+    // Método para actualizar el estado del pedido
+    private function actualizarEstadoPedido($numVenta, $estado)
+    {
+        $sql_actualizar = "UPDATE pedidos SET Estado = ? WHERE NumVenta = ?";
+        $stmt = $this->conexion->prepare($sql_actualizar);
+
+        if (!$stmt) {
+            echo "Error en la preparación de la actualización del estado: " . $this->conexion->error . "<br>";
+            return false;
+        }
+
+        $stmt->bind_param("si", $estado, $numVenta);
+        $resultado = $stmt->execute();
+        $stmt->close();
+
+        return $resultado; // Retorna true si la actualización fue exitosa, false en caso contrario
+    }
+
+    // Método para establecer el estado de descanso de un repartidor
+    public function establecerDescanso($nomina, $estadoDescanso)
+    {
+        $sql = "UPDATE repartidor SET Descanso = ? WHERE Nomina = ?";
+        $stmt = $this->conexion->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param("ii", $estadoDescanso, $nomina);
+            if ($stmt->execute()) {
+                echo "Estado de descanso del repartidor {$nomina} actualizado a {$estadoDescanso}.<br>";
+            } else {
+                echo "Error al actualizar el estado de descanso del repartidor {$nomina}: " . $stmt->error . "<br>";
+            }
+            $stmt->close();
+        } else {
+            echo "Error en la preparación de la consulta para establecer descanso: " . $this->conexion->error . "<br>";
+        }
+    }
+
+    // Método para asignar pedidos a repartidores
+    public function asignarNodosARepartidores($pedidos, $repartidores, $sede)
+    {
         $nodosAsignados = [];
         $limitePedidos = $this->limitePedido();
-    
-        // Inicializar ubicación y tiempo de los repartidores sin cambiar su estado a "Ocupado"
+
+        // Obtener el repartidor foráneo si existen
+    if ($this->exitenForaneos) {
+        $repartidorForaneo = $this->obtenerRepartidorForaneo();
+        
+        if ($repartidorForaneo) {
+            $this->foraneo = $repartidorForaneo->getNomina();
+            
+            // Buscar y eliminar el repartidor foráneo de la lista de repartidores locales
+            foreach ($repartidores as $key => $repartidor) {
+                if ($repartidor->getNomina() === $this->foraneo) {
+                    unset($repartidores[$key]); // Eliminar repartidor foráneo de la lista
+                    echo "Repartidor foráneo con nómina {$this->foraneo} eliminado de la lista local.<br>";
+                }
+            }
+            $repartidores = array_values($repartidores);
+        }
+    }
+        
+        if ($repartidorForaneo) {
+            $nomina = $repartidorForaneo->getNomina();
+            echo "<br>Repartidor disponible para pedidos foráneos: $nomina ";
+            // Inicializar ubicación y tiempo del repartidor foráneo
+            $repartidorForaneo->actualizarUbicacion($sede['latitud'], $sede['longitud']);
+            echo "<br>actualizarUbicacion";
+            $repartidorForaneo->setTiempo(new DateTime()); // Usar la hora actual de la sede
+            echo "<br>setTiempo";
+            $repartidorForaneo->setPedidosAsignados(0); // Contador de pedidos asignados
+            echo "<br>setPedidosAsignados";
+        }
+
+        // Inicializar ubicación y tiempo de los demás repartidores
         foreach ($repartidores as $repartidor) {
             $repartidor->actualizarUbicacion($sede['latitud'], $sede['longitud']);
-            $repartidor->tiempo = new DateTime('09:00');
-            $repartidor->pedidosAsignados = 0; // Contador de pedidos asignados
+            $repartidor->setTiempo(new DateTime()); // Usar la hora actual de la sede
+            $repartidor->setPedidosAsignados(0); // Contador de pedidos asignados
         }
-    
+
+        // Procesar cada pedido
         foreach ($pedidos as $pedido) {
-            echo "<br>Procesando {$pedido->pedido} - Volumen: {$pedido->volumen_total}, Dimensiones: {$pedido->largo_maximo} x {$pedido->alto_maximo} x {$pedido->ancho_maximo}<br>";
-    
+            echo "<br>Procesando Pedido {$pedido->getPedido()} - Volumen: {$pedido->getVolumenTotal()}, Dimensiones: {$pedido->getLargoMaximo()} x {$pedido->getAltoMaximo()} x {$pedido->getAnchoMaximo()}<br>";
+
             $nodoAsignado = null;
             $distanciaMinima = INF;
             $tiempoEstimadoLlegada = null;
             $tiempoRegresoSede = null;
-    
-            // Verificar si el pedido pertenece a un municipio foráneo
-            $esForaneo = ($pedido->municipio == 9);
-    
-            foreach ($repartidores as $repartidor) {
-                // Verificar el límite de pedidos para cada repartidor
-                if ($repartidor->pedidosAsignados >= $limitePedidos) {
-                    echo "El repartidor {$repartidor->nomina} ha alcanzado su límite de $limitePedidos pedidos.<br>";
+
+            // Verificar si el pedido es foráneo
+            $esForaneo = ($pedido->getForaneo() == 'Sí');
+
+            if ($esForaneo) {
+                if ($repartidorForaneo && $repartidorForaneo->puedeTransportarPedido(
+                    $pedido->getVolumenTotal(),
+                    $pedido->getLargoMaximo(),
+                    $pedido->getAltoMaximo(),
+                    $pedido->getAnchoMaximo()
+                )) {
+                    $nodoAsignado = $repartidorForaneo;
+                    echo "Pedido {$pedido->getPedido()} asignado al repartidor foráneo.<br>";
+                } else {
+                    echo "No hay repartidor foráneo disponible para el pedido {$pedido->getPedido()}.<br>";
                     continue;
                 }
-    
-                // Si el pedido es foráneo, solo intentar asignarlo a un repartidor foráneo
-                if ($esForaneo && !$repartidor->es_foraneo) {
-                    continue;
-                }
-    
-                // Continuar con la lógica de asignación si el repartidor cumple los criterios
-                if ($repartidor->puedeTransportarPedido($pedido->volumen_total, $pedido->largo_maximo, $pedido->alto_maximo, $pedido->ancho_maximo)) {
-                    $distanciaARepartidor = $this->calcularDistanciaHaversine(
-                        $repartidor->latitud,
-                        $repartidor->longitud,
-                        $pedido->latitud,
-                        $pedido->longitud
-                    );
-    
-                    $tiempoViajeSegundos = $this->calcularTiempoViaje(
-                        $repartidor->latitud,
-                        $repartidor->longitud,
-                        $pedido->latitud,
-                        $pedido->longitud
-                    );
-                    $tiempoRegresoSegundos = $this->calcularTiempoViaje(
-                        $pedido->latitud,
-                        $pedido->longitud,
-                        $sede['latitud'],
-                        $sede['longitud']
-                    );
-    
-                    if ($tiempoViajeSegundos === null || $tiempoRegresoSegundos === null) {
-                        echo "No se pudo obtener el tiempo de viaje para {$pedido->pedido} con el repartidor {$repartidor->nomina}.<br>";
+            } else {
+                // Lógica de asignación para pedidos dentro de la zona metropolitana
+                foreach ($repartidores as $repartidor) {
+                    echo "<br>";
+                    // Verificar el límite de pedidos para cada repartidor
+                    if ($repartidor->getPedidosAsignados() >= $limitePedidos) {
+                        echo "El repartidor {$repartidor->getNomina()} ha alcanzado su límite de $limitePedidos pedidos.<br>";
                         continue;
                     }
-    
-                    $tiempoViajeMinutos = (int)($tiempoViajeSegundos / 60);
-                    $tiempoRegresoMinutos = (int)($tiempoRegresoSegundos / 60);
-    
-                    $horaEstimadaLlegada = clone $repartidor->tiempo;
-                    $horaEstimadaLlegada->modify("+{$tiempoViajeMinutos} minutes");
-                    $horaEstimadaRegreso = clone $horaEstimadaLlegada;
-                    $horaEstimadaRegreso->modify("+{$tiempoRegresoMinutos} minutes");
-    
-                    if ($repartidor->puedeTrabajarHasta($horaEstimadaRegreso)) {
-                        echo "Evaluando {$pedido->pedido} para repartidor {$repartidor->nomina} - Distancia: $distanciaARepartidor, Tiempo de ida: $tiempoViajeMinutos min, Tiempo de regreso: $tiempoRegresoMinutos min<br>";
-    
-                        if ($distanciaARepartidor < $distanciaMinima) {
-                            $distanciaMinima = $distanciaARepartidor;
-                            $nodoAsignado = $repartidor;
-                            $tiempoEstimadoLlegada = $horaEstimadaLlegada;
-                            $tiempoRegresoSede = $horaEstimadaRegreso;
+
+                    // Verificar si el repartidor puede transportar el pedido
+                    if ($repartidor->puedeTransportarPedido($pedido->getVolumenTotal(), $pedido->getLargoMaximo(), $pedido->getAltoMaximo(), $pedido->getAnchoMaximo())) {
+                        $distanciaARepartidor = $this->calcularDistanciaHaversine(
+                            $repartidor->getLatitud(),
+                            $repartidor->getLongitud(),
+                            $pedido->getLatitud(),
+                            $pedido->getLongitud()
+                        );
+
+                        $tiempoViajeSegundos = $this->calcularTiempoViaje(
+                            $repartidor->getLatitud(),
+                            $repartidor->getLongitud(),
+                            $pedido->getLatitud(),
+                            $pedido->getLongitud()
+                        );
+                        $tiempoRegresoSegundos = $this->calcularTiempoViaje(
+                            $pedido->getLatitud(),
+                            $pedido->getLongitud(),
+                            $sede['latitud'],
+                            $sede['longitud']
+                        );
+
+                        if ($tiempoViajeSegundos === null || $tiempoRegresoSegundos === null) {
+                            echo "No se pudo obtener el tiempo de viaje para Pedido {$pedido->getPedido()} con el repartidor {$repartidor->getNomina()}.<br>";
+                            continue;
                         }
-                    } else {
-                        echo "Repartidor {$repartidor->nomina} no puede completar el pedido {$pedido->pedido} y regresar a la sede a tiempo.<br>";
+
+                        // Sumar 10 minutos por imprevistos
+                        $tiempoViajeSegundos += 600; // 600 segundos = 10 minutos
+
+                        // Convertir a minutos
+                        $tiempoViajeMinutos = (int)($tiempoViajeSegundos / 60);
+                        $tiempoRegresoMinutos = (int)($tiempoRegresoSegundos / 60);
+
+                        // Mostrar la hora actual del repartidor
+                        echo "Hora actual del repartidor {$repartidor->getNomina()}: {$repartidor->getTiempo()->format('H:i')}<br>";
+
+                        // Calcular tiempos
+                        $horaEstimadaLlegada = clone $repartidor->getTiempo();
+                        $horaEstimadaLlegada->modify("+{$tiempoViajeMinutos} minutes");
+                        echo "Hora estimada de llegada al pedido: {$horaEstimadaLlegada->format('H:i')}<br>";
+
+                        $horaEstimadaRegreso = clone $horaEstimadaLlegada;
+                        $horaEstimadaRegreso->modify("+{$tiempoRegresoMinutos} minutes");
+
+                        // Verificar si el recorrido cruza la HoraBandera
+                        if ($horaEstimadaLlegada >= $repartidor->getHoraBandera() && $repartidor->getDescanso() == 0) {
+                            $horaEstimadaRegreso->modify('+1 hour'); // Agregar una hora de descanso
+                            echo "El recorrido cruza la HoraBandera ({$repartidor->getHoraBandera()->format('H:i')}). Se ha añadido 1 hora de descanso.<br>";
+                            $this->establecerDescanso($repartidor->getNomina(), 1);
+                            $repartidor->setDescanso(1);
+                        }
+
+                        // Mostrar hora estimada de regreso
+                        echo "Hora estimada de regreso a la sede: {$horaEstimadaRegreso->format('H:i')}<br>";
+
+                        if ($tiempoRegresoSede > new DateTime('18:00:00')) {
+                            echo "Repartidor {$repartidor->getNomina()} no puede regresar a la sede antes de las 18:00. Pedido {$pedido->getPedido()} no asignado.<br>";
+                            continue; // Saltar este pedido
+                        }
+
+                        // Si pasa la validación, se asigna el pedido
+                        if ($repartidor->puedeTrabajarHasta($tiempoRegresoSede)) {
+                            echo "Evaluando Pedido {$pedido->getPedido()} para repartidor {$repartidor->getNomina()} - Distancia: $distanciaARepartidor km, Tiempo de ida: $tiempoViajeMinutos min, Tiempo de regreso: $tiempoRegresoMinutos min<br>";
+
+                            if ($distanciaARepartidor < $distanciaMinima) {
+                                $distanciaMinima = $distanciaARepartidor;
+                                $nodoAsignado = $repartidor;
+                                $tiempoEstimadoLlegada = $horaEstimadaLlegada;
+                            }
+                        } else {
+                            echo "Repartidor {$repartidor->getNomina()} no puede completar el Pedido {$pedido->getPedido()} y regresar a la sede a tiempo.<br>";
+                        }
                     }
                 }
             }
-    
+
             if ($nodoAsignado) {
-                $vehiculo = $nodoAsignado->matricula;
-                if ($this->registrarEnvio($pedido, $nodoAsignado, $vehiculo)) {
-                    $nodoAsignado->actualizarVolumenOcupado($pedido->volumen_total);
-                    $nodoAsignado->actualizarUbicacion($pedido->latitud, $pedido->longitud);
-                    $nodoAsignado->tiempo = $tiempoEstimadoLlegada;
-                    $nodoAsignado->pedidosAsignados++; // Incrementar el contador de pedidos asignados
-                    echo "Pedido {$pedido->pedido} asignado a repartidor {$nodoAsignado->nomina}.<br>";
+                if ($this->registrarEnvio($pedido, $nodoAsignado)) {
+                    $nodoAsignado->actualizarVolumenOcupado($pedido->getVolumenTotal());
+                    $nodoAsignado->actualizarUbicacion($pedido->getLatitud(), $pedido->getLongitud());
+                    $nodoAsignado->setTiempo($tiempoEstimadoLlegada);
+                    $nodoAsignado->incrementarPedidosAsignados(); // Incrementar el contador de pedidos asignados
+                    echo "Pedido {$pedido->getPedido()} asignado a repartidor {$nodoAsignado->getNomina()}.<br>";
+
+                    // Actualizar el kilometraje del vehículo (calculando la distancia desde la sede hasta el pedido)
+                    $kilometrosRecorridos = $this->calcularDistanciaHaversine(
+                        $sede['latitud'],
+                        $sede['longitud'],
+                        $pedido->getLatitud(),
+                        $pedido->getLongitud()
+                    );
+                    $nodoAsignado->agregarKilometrosVehiculo($kilometrosRecorridos);
+                    $this->actualizarKilometrosRecorridos($nodoAsignado->getVehiculo()->getPlaca(), $nodoAsignado->getVehiculo()->getKilometrosRecorridos());
+                    echo "Kilometraje del vehículo del repartidor {$nodoAsignado->getNomina()} actualizado a {$nodoAsignado->getVehiculo()->getKilometrosRecorridos()} km.<br>";
                 }
-                $nodosAsignados[$nodoAsignado->nomina][] = $pedido;
+                $nodosAsignados[$nodoAsignado->getNomina()][] = $pedido;
             } else {
-                echo "Pedido {$pedido->pedido} no pudo ser asignado a ningún repartidor.<br><br>";
+                echo "Pedido {$pedido->getPedido()} no pudo ser asignado a ningún repartidor.<br><br>";
             }
         }
-    
+
         // Al final de la asignación, actualizar el estado de los repartidores a "Ocupado" en la base de datos
         foreach ($repartidores as $repartidor) {
-            if ($repartidor->pedidosAsignados > 0) { // Solo actualizar si el repartidor tiene pedidos asignados
-                $sqlActualizarRepartidor = "UPDATE repartidor SET Estado = 'Ocupado' WHERE Nomina = '{$repartidor->nomina}'";
-                $this->conexion->query($sqlActualizarRepartidor);
+            if ($repartidor->getPedidosAsignados() > 0) { // Solo actualizar si el repartidor tiene pedidos asignados
+                $sqlActualizarRepartidor = "UPDATE repartidor SET Estado = 'Ocupado' WHERE Nomina = ?";
+                $stmt = $this->conexion->prepare($sqlActualizarRepartidor);
+                if ($stmt) {
+                    $nomina =  $repartidor->getNomina();
+                    $stmt->bind_param("i", $nomina);
+                    if (!$stmt->execute()) {
+                        echo "Error al actualizar el estado del repartidor {$repartidor->getNomina()}: " . $stmt->error . "<br>";
+                    }
+                    $stmt->close();
+                } else {
+                    echo "Error en la preparación de la consulta para actualizar el repartidor {$repartidor->getNomina()}: " . $this->conexion->error . "<br>";
+                }
             }
         }
-    
+
+        // Actualizar el estado del repartidor foráneo si tiene pedidos asignados
+        if ($repartidorForaneo && $repartidorForaneo->getPedidosAsignados() > 0) {
+            $sqlActualizarRepartidorForaneo = "UPDATE repartidor SET Estado = 'Ocupado' WHERE Nomina = ?";
+            $stmtForaneo = $this->conexion->prepare($sqlActualizarRepartidorForaneo);
+            if ($stmtForaneo) {
+                $stmtForaneo->bind_param("i", $repartidorForaneo->getNomina());
+                if (!$stmtForaneo->execute()) {
+                    echo "Error al actualizar el estado del repartidor foráneo {$repartidorForaneo->getNomina()}: " . $stmtForaneo->error . "<br>";
+                }
+                $stmtForaneo->close();
+            } else {
+                echo "Error en la preparación de la consulta para actualizar el repartidor foráneo {$repartidorForaneo->getNomina()}: " . $this->conexion->error . "<br>";
+            }
+        }
+
         return $nodosAsignados;
     }
-    
 
-    public function limitePedido() {
+    // Método para actualizar los kilómetros recorridos de un repartidor en la base de datos
+    private function actualizarKilometrosRecorridos($placa, $kilometrosRecorridos)
+    {
+        $sql = "UPDATE vehiculo SET KilometrosRecorridos = ? WHERE Placa = ?";
+        $stmt = $this->conexion->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param("ds", $kilometrosRecorridos, $placa);
+            if ($stmt->execute()) {
+                echo "KilometrosRecorridos del vehículo con placa {$placa} actualizado a {$kilometrosRecorridos} km.<br>";
+            } else {
+                echo "Error al actualizar KilometrosRecorridos del vehículo con placa {$placa}: " . $stmt->error . "<br>";
+            }
+            $stmt->close();
+        } else {
+            echo "Error en la preparación de la consulta para actualizar KilometrosRecorridos: " . $this->conexion->error . "<br>";
+        }
+    }
+
+    public function limitePedido()
+    {
         // Obtener el número total de pedidos en la base de datos con estado 'En almacen' o 'Entrega parcial'
         $sqlTotalPedidos = "SELECT COUNT(*) AS totalPedidos FROM pedidos WHERE Estado IN ('Entrega parcial', 'En almacen')";
         $resultadoTotalPedidos = $this->conexion->query($sqlTotalPedidos);
         $totalPedidos = 0;
-    
+
         if ($resultadoTotalPedidos && $resultadoTotalPedidos->num_rows > 0) {
             $fila = $resultadoTotalPedidos->fetch_assoc();
             $totalPedidos = $fila['totalPedidos'];
@@ -467,21 +665,21 @@ private function agregarDetallesAPedido($pedido) {
             echo "No hay pedidos en estado 'Entrega parcial' o 'En almacen'.<br>";
             return 0; // Retorna 0 si no hay pedidos
         }
-    
+
         // Calcular los días restantes en la semana
         $diaActual = date('N'); // N = 1 (lunes) a 7 (domingo)
         $diasRestantesSemana = 7 - $diaActual;
-    
+
         if ($diasRestantesSemana <= 0) {
             echo "Error: No quedan días restantes en la semana.<br>";
             return 0;
         }
-    
+
         // Obtener la cantidad de repartidores disponibles
-        $sqlRepartidoresDisponibles = "SELECT COUNT(*) AS totalRepartidores FROM repartidor WHERE Estado = 'Ocupado'";
+        $sqlRepartidoresDisponibles = "SELECT COUNT(*) AS totalRepartidores FROM repartidor WHERE Estado = 'Disponible' AND Descanso = 0";
         $resultadoRepartidores = $this->conexion->query($sqlRepartidoresDisponibles);
         $cantidadRepartidores = 0;
-    
+
         if ($resultadoRepartidores && $resultadoRepartidores->num_rows > 0) {
             $fila = $resultadoRepartidores->fetch_assoc();
             $cantidadRepartidores = $fila['totalRepartidores'];
@@ -489,41 +687,85 @@ private function agregarDetallesAPedido($pedido) {
             echo "No hay repartidores disponibles.<br>";
             return 0; // Retorna 0 si no hay repartidores disponibles
         }
-    
+
         // Verificar que no se divida por cero
         if ($totalPedidos == 0 || $diasRestantesSemana == 0 || $cantidadRepartidores == 0) {
             echo "Error: Parámetros insuficientes para calcular el límite de pedidos (totalPedidos: $totalPedidos, diasRestantesSemana: $diasRestantesSemana, cantidadRepartidores: $cantidadRepartidores).<br>";
             return 0;
         }
-    
+
         // Calcular el límite de pedidos que puede tomar cada repartidor por día
         $pedidosPorDia = $totalPedidos / $diasRestantesSemana;
-    
+
         // Calcular el límite final de pedidos por repartidor
         $limitePorRepartidor = ceil($pedidosPorDia / $cantidadRepartidores);
-    
+
         echo "Límite de pedidos por repartidor: $limitePorRepartidor<br>";
-    
+
         return $limitePorRepartidor;
     }
-     
-    // Método para actualizar el estado del pedido
-    private function actualizarEstadoPedido($numVenta, $estado) {
-    $sql_actualizar = "UPDATE pedidos SET Estado = ? WHERE NumVenta = ?";
-    $stmt = $this->conexion->prepare($sql_actualizar);
-    
-    if (!$stmt) {
-        echo "Error en la preparación de la actualización del estado: " . $this->conexion->error . "<br>";
-        return false;
+
+    // Obtener el repartidor designado para pedidos foráneos (al azar)
+    private function obtenerRepartidorForaneo()
+    {
+        // Seleccionar un repartidor al azar que esté disponible
+        $sql = "SELECT Nomina, Nombre, Apellidos, Estado, Latitud, Longitud, Descanso, HoraBandera 
+                FROM repartidor 
+                WHERE Estado = 'Disponible' 
+                ORDER BY RAND() 
+                LIMIT 1";
+        $resultado = $this->conexion->query($sql);
+        
+        if ($resultado && $resultado->num_rows > 0) {
+            echo "<br>Procesando repartidor foraneo";
+            $fila = $resultado->fetch_assoc();
+            $vehiculo = $this->obtenerVehiculoMayorCapacidad();
+            if ($vehiculo) {
+                echo "<br>Se encontro un vehiculo";
+                return new Repartidor(
+                    $fila['Nomina'],
+                    $fila['Nombre'],
+                    $fila['Apellidos'],
+                    $fila['Latitud'],
+                    $fila['Longitud'],
+                    $fila['Estado'],
+                    $fila['Descanso'],
+                    $fila['HoraBandera'],
+                    $vehiculo,
+                    true
+                );
+            }
+            
+        } else {
+            echo "No se encontró un repartidor disponible para pedidos foráneos.<br>";
+            return null;
+        }
     }
-    
-    $stmt->bind_param("si", $estado, $numVenta);
-    $resultado = $stmt->execute();
-    $stmt->close();
-    
-    return $resultado; // Retorna true si la actualización fue exitosa, false en caso contrario
-}
 
-}
-?>
+    // Seleccionar el vehículo con mayor capacidad
+    private function obtenerVehiculoMayorCapacidad()
+    {
+        $sql = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado, KilometrosRecorridos 
+                FROM vehiculo 
+                WHERE Estado = 'En circulación' 
+                ORDER BY (Largo * Alto * Ancho) DESC 
+                LIMIT 1";
+        $resultado = $this->conexion->query($sql);
 
+        if ($resultado && $resultado->num_rows > 0) {
+            $fila = $resultado->fetch_assoc();
+            return new Vehiculo(
+                $fila['Placa'],
+                $fila['Largo'],
+                $fila['Alto'],
+                $fila['Ancho'],
+                $fila['Modelo'],
+                $fila['Estado'],
+                $fila['KilometrosRecorridos']
+            );
+        } else {
+            echo "No se encontró ningún vehículo disponible para pedidos foráneos.<br>";
+            return null;
+        }
+    }
+}

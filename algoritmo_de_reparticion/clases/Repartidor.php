@@ -1,103 +1,289 @@
 <?php
-class Repartidor {
-    public $matricula;
-    public $nomina;
-    public $volumenOcupado = 0; // Volumen actualmente ocupado en el vehículo
-    public $largo;
-    public $alto;
-    public $ancho;
-    public $tiempo;             // Hora actual del repartidor
-    public $hora_limite;        // Hora límite de trabajo
-    private $hora_inicio;       // Hora de inicio de trabajo
-    public $es_foraneo;         // Indica si el repartidor es foráneo
-    public $latitud;            // Latitud actual del repartidor
-    public $longitud;           // Longitud actual del repartidor
 
-    public function __construct($matricula, $nomina, $largo, $alto, $ancho, $hora_limite = '18:30', $es_foraneo = false) {
-        $this->matricula = $matricula;
+class Repartidor
+{
+    private $nomina;
+    private $nombre;
+    private $apellidos;
+    private $estado;
+    private $clave;
+    private $latitud;
+    private $longitud;
+    private $descanso;
+    private $horaBandera;
+    private $vehiculo;
+    private $pedidosAsignados;
+    private $volumenOcupado;
+    private $tiempo; 
+    private $numOrdenActual;
+    private $esForaneo;
+    private $horaLimite;
+
+    public function __construct(
+        $nomina,
+        $nombre,
+        $apellidos,
+        $latitud,
+        $longitud,
+        $estado = 'Disponible',
+        $descanso = 0,
+        $horaBandera = null,
+        $vehiculo = null,
+        $esForaneo = false,
+        $horaLimite = null
+    ) {
         $this->nomina = $nomina;
-        $this->volumenOcupado = 0;
-        $this->largo = $largo;
-        $this->alto = $alto;
-        $this->ancho = $ancho;
-        $this->hora_limite = $hora_limite;
-        $this->hora_inicio = new DateTime('09:00'); 
-        $this->tiempo = clone $this->hora_inicio; // Hora actual del repartidor, inicia a las 09:00
-        $this->es_foraneo = $es_foraneo;
-    }
-
-    // Calcula el volumen total del vehículo basado en sus dimensiones
-    public function calcularVolumenTotalVehiculo() {
-        return $this->largo * $this->alto * $this->ancho;
-    }
-
-    // Calcula el volumen disponible en el vehículo
-    public function calcularVolumenDisponible() {
-        return $this->calcularVolumenTotalVehiculo() - $this->volumenOcupado;
-    }
-
-    // Actualiza el volumen ocupado del vehículo al asignar un pedido
-    public function actualizarVolumenOcupado($volumenPedido) {
-        $this->volumenOcupado += $volumenPedido;
-    }
-
-    // Verifica si el pedido cumple con el volumen y dimensiones del vehículo
-    public function puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido) {
-        $volumenAdecuado = $volumenPedido <= $this->calcularVolumenDisponible();
-        $dimensionesAdecuadas = $largoPedido <= $this->largo && $altoPedido <= $this->alto && $anchoPedido <= $this->ancho;
-        return $volumenAdecuado && $dimensionesAdecuadas;
-    }
-
-    // Método para agregar un pedido si cumple con el volumen, dimensiones y tiempo
-    public function agregarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido, $tiempoEstimado, $tiempoEntreNodos) {
-        $tiempoConImprevistos = $tiempoEstimado + $tiempoEntreNodos + 10; // Añade 10 minutos de imprevistos
-
-        // Agregar tiempo de comida si no es foráneo y aún no se ha añadido
-        if (!$this->es_foraneo && !$this->tieneTiempoDeComida()) {
-            $this->tiempo->modify('+60 minutes'); // Añadir una hora para la comida
-            echo "Tiempo de comida añadido para el repartidor {$this->nomina}.<br>";
-        }
-
-        // Verificar volumen y dimensiones antes de agregar
-        if (!$this->puedeTransportarPedido($volumenPedido, $largoPedido, $altoPedido, $anchoPedido)) {
-            echo "El repartidor {$this->nomina} no puede transportar el pedido debido a restricciones de volumen o dimensiones.<br>";
-            return false;
-        }
-
-        // Crear una instancia temporal del tiempo estimado de fin del pedido
-        $horaEstimadaFin = clone $this->tiempo;
-        $horaEstimadaFin->modify("+{$tiempoConImprevistos} minutes");
-
-        // Verificar si el repartidor puede trabajar hasta la hora límite
-        if (!$this->puedeTrabajarHasta($horaEstimadaFin)) {
-            echo "El repartidor {$this->nomina} no puede trabajar hasta la hora límite con el pedido actual.<br>";
-            return false;
-        }
-
-        // Asignar el pedido y actualizar tiempo y volumen ocupado
-        $this->actualizarVolumenOcupado($volumenPedido);
-        $this->tiempo = $horaEstimadaFin; // Actualizar el tiempo del repartidor con la nueva hora estimada
-        echo "Pedido asignado al repartidor {$this->nomina}. Volumen ocupado actualizado: {$this->volumenOcupado}.<br>";
-        return true;
-    }
-
-    // Verificar si el repartidor puede trabajar hasta una hora límite estimada
-    public function puedeTrabajarHasta(DateTime $horaEstimadaFin) {
-        $horaLimite = new DateTime($this->hora_limite); // Convertir hora límite a DateTime
-        return $horaEstimadaFin <= $horaLimite; // Comparar la hora de fin estimada con la hora límite
-    }
-
-    // Verificar si el repartidor ya ha tenido tiempo de comida
-    private function tieneTiempoDeComida() {
-        $horasTrabajadas = $this->hora_inicio->diff($this->tiempo)->h;
-        return $horasTrabajadas >= 4;
-    }
-
-    // Actualizar la ubicación del repartidor después de asignar un pedido
-    public function actualizarUbicacion($latitud, $longitud) {
+        $this->nombre = $nombre;
+        $this->apellidos = $apellidos;
         $this->latitud = $latitud;
         $this->longitud = $longitud;
-        echo "Ubicación del repartidor {$this->nomina} actualizada a: {$this->latitud}, {$this->longitud}.<br>";
+        $this->estado = $estado;
+        $this->descanso = $descanso;
+    
+        // Validar y asignar HoraBandera
+        if ($horaBandera instanceof DateTime) {
+            $this->horaBandera = $horaBandera;
+        } elseif (is_string($horaBandera)) {
+            try {
+                $this->horaBandera = new DateTime($horaBandera);
+            } catch (Exception $e) {
+                throw new Exception("Formato inválido para HoraBandera: {$horaBandera}");
+            }
+        } else {
+            $this->horaBandera = new DateTime('12:00:00'); // Valor predeterminado
+        }
+    
+        // Validar y asignar HoraLimite
+        if ($horaLimite instanceof DateTime) {
+            $this->horaLimite = $horaLimite;
+        } elseif (is_string($horaLimite)) {
+            try {
+                $this->horaLimite = new DateTime($horaLimite);
+            } catch (Exception $e) {
+                throw new Exception("Formato inválido para HoraLimite: {$horaLimite}");
+            }
+        } else {
+            $this->horaLimite = new DateTime('18:00:00'); // Valor predeterminado
+        }
+    
+        $this->vehiculo = $vehiculo;
+        $this->pedidosAsignados = 0;
+        $this->volumenOcupado = 0;
+        $this->tiempo = new DateTime('09:00:00'); // Tiempo inicial
+        $this->esForaneo = $esForaneo;
+        $this->numOrdenActual = 0;
+    }
+    
+
+
+    // Getters
+    public function getNomina()
+    {
+        return $this->nomina;
+    }
+
+    public function getNombre()
+    {
+        return $this->nombre;
+    }
+
+    public function getApellidos()
+    {
+        return $this->apellidos;
+    }
+
+    public function getEstado()
+    {
+        return $this->estado;
+    }
+
+    public function getClave()
+    {
+        return $this->clave;
+    }
+
+    public function getLatitud()
+    {
+        return $this->latitud;
+    }
+
+    public function getLongitud()
+    {
+        return $this->longitud;
+    }
+
+    public function getDescanso()
+    {
+        return $this->descanso;
+    }
+
+    public function getHoraBandera()
+    {
+        return $this->horaBandera;
+    }
+
+    public function getVehiculo()
+    {
+        return $this->vehiculo;
+    }
+
+    public function getPedidosAsignados()
+    {
+        return $this->pedidosAsignados;
+    }
+
+    public function setPedidosAsignados($cantidad)
+    {
+        $this->pedidosAsignados = $cantidad;
+    }
+
+    public function getVolumenOcupado()
+    {
+        return $this->volumenOcupado;
+    }
+
+    public function getTiempo()
+    {
+        if (!$this->tiempo) {
+            $this->tiempo = new DateTime();
+        }
+        return $this->tiempo;
+    }
+
+
+    // Setters
+    public function setEstado($estado)
+    {
+        $allowed_states = ['Disponible', 'Ocupado'];
+        if (in_array($estado, $allowed_states)) {
+            $this->estado = $estado;
+        } else {
+            throw new Exception("Estado inválido para repartidor: {$estado}");
+        }
+    }
+
+    public function setDescanso($descanso)
+    {
+        if ($descanso === 0 || $descanso === 1) {
+            $this->descanso = $descanso;
+            echo "El descanso esta habilitado";
+        } else {
+            throw new Exception("Valor de descanso inválido: {$descanso}");
+        }
+    }
+
+    public function setHoraBandera($horaBandera)
+    {
+        try {
+            $this->horaBandera = new DateTime($horaBandera);
+        } catch (Exception $e) {
+            throw new Exception("Formato de HoraBandera inválido: {$horaBandera}");
+        }
+    }
+
+    public function setVehiculo($vehiculo)
+    {
+        if ($vehiculo instanceof Vehiculo) {
+            $this->vehiculo = $vehiculo;
+        } else {
+            throw new Exception("Vehiculo debe ser una instancia de la clase Vehiculo");
+        }
+    }
+
+    public function setTiempo($tiempo)
+    {
+        if ($tiempo instanceof DateTime) {
+            $this->tiempo = $tiempo;
+        } else {
+            throw new Exception("Tiempo debe ser una instancia de DateTime");
+        }
+    }
+
+    public function puedeTrabajarHasta($horaEstimadaRegreso)
+    {
+        return $horaEstimadaRegreso <= $this->horaLimite;
+    }
+
+    // Método para verificar si es hora de descanso
+    public function esHoraDeDescanso($horaActual)
+    {
+        if (!$horaActual instanceof DateTime || !$this->horaBandera instanceof DateTime) {
+            throw new InvalidArgumentException("Los tiempos deben ser instancias de DateTime.");
+        }
+        return $horaActual >= $this->horaBandera;
+    }
+
+
+    // Método para agregar kilómetros recorridos al vehículo
+    public function agregarKilometrosVehiculo($kilometros)
+    {
+        if ($this->vehiculo !== null) {
+            $this->vehiculo->agregarKilometros($kilometros);
+        } else {
+            throw new Exception("Repartidor sin vehículo asignado");
+        }
+    }
+
+    // Método para incrementar pedidos asignados
+    public function incrementarPedidosAsignados()
+    {
+        $this->pedidosAsignados++;
+    }
+
+    // Método para actualizar volumen ocupado
+    public function actualizarVolumenOcupado($volumen)
+    {
+        $this->volumenOcupado += $volumen;
+    }
+
+    // Método para actualizar ubicación
+    public function actualizarUbicacion($latitud, $longitud)
+    {
+        $this->latitud = $latitud;
+        $this->longitud = $longitud;
+    }
+
+    // Método para asignar vehículo
+    public function asignarVehiculo($vehiculo)
+    {
+        $this->vehiculo = $vehiculo;
+    }
+
+    public function actualizarOrden()
+    {
+        return $this->numOrdenActual += 1;
+    }
+
+    public function puedeTransportarPedido($volumenTotal, $largoMaximo, $altoMaximo, $anchoMaximo)
+    {
+        // Verificar si el repartidor tiene un vehículo asignado
+        if ($this->vehiculo === null) {
+            echo "Repartidor {$this->nomina} no tiene un vehículo asignado.<br>";
+            return false;
+        }
+
+        // Calcular el volumen total después de asignar este pedido
+        $volumenDespues = $this->volumenOcupado + $volumenTotal;
+
+        // Obtener la capacidad del vehículo
+        $capacidadVehiculo = $this->vehiculo->getCapacidad(); // Supone que la clase Vehiculo tiene un método getCapacidad()
+
+        if ($volumenDespues > $capacidadVehiculo) {
+            echo "Repartidor {$this->nomina} excede la capacidad del vehículo. Volumen total: {$volumenDespues} > Capacidad: {$capacidadVehiculo}.<br>";
+            return false;
+        }
+
+        // Verificar las dimensiones del pedido contra las dimensiones del vehículo
+        $largoVehiculo = $this->vehiculo->getLargo();
+        $altoVehiculo = $this->vehiculo->getAlto();
+        $anchoVehiculo = $this->vehiculo->getAncho();
+
+        if ($largoMaximo > $largoVehiculo || $altoMaximo > $altoVehiculo || $anchoMaximo > $anchoVehiculo) {
+            echo "Repartidor {$this->nomina} no puede transportar el pedido debido a las dimensiones. Pedido (LxAxA): {$largoMaximo}x{$altoMaximo}x{$anchoMaximo}; Vehículo (LxAxA): {$largoVehiculo}x{$altoVehiculo}x{$anchoVehiculo}.<br>";
+            return false;
+        }
+
+        // Si todas las verificaciones pasan
+        return true;
     }
 }
-?>

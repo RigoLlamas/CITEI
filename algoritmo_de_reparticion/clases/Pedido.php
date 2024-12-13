@@ -1,21 +1,23 @@
 <?php
 
-class Pedido {
-    public $pedido;
-    public $longitud;
-    public $latitud;
-    public $municipio;
-    public $volumen_total; // Asignado directamente desde la función obtenerPedidosDesdeBD
-    public $estatus;
-    public $largo_maximo;
-    public $ancho_maximo;
-    public $alto_maximo;
-    public $fecha;
+class Pedido
+{
+    private $pedido;
+    private $longitud;
+    private $latitud;
+    private $municipio;
+    private $volumen_total;
+    private $estatus;
+    private $largo_maximo;
+    private $ancho_maximo;
+    private $alto_maximo;
+    private $fecha;
     private $direccion;
-    private $apiKey;
-    public $cantidad;
+    private $cantidad;
+    private $foraneo;
 
-    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha, $cantidad) {
+    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha, $cantidad, $foraneo, $latitud, $longitud)
+    {
         $this->pedido = $pedido;
         $this->direccion = $direccion;
         $this->municipio = $municipio;
@@ -26,43 +28,80 @@ class Pedido {
         $this->volumen_total = $volumen_total;
         $this->fecha = $fecha;
         $this->cantidad = $cantidad;
-
-        // Obtener la API key desde el archivo de configuración
-        $config = include '../config.php';
-        $this->apiKey = $config['api_keys']['google_maps_api_key'] ?? null;
-
-        // Verificar si la API key está disponible antes de realizar la petición
-        if ($this->apiKey) {
-            $this->obtenerCoordenadas();
-        } else {
-            echo "API key de Google Maps no encontrada.<br>";
-        }
+        $this->foraneo = $foraneo;
+        $this->latitud = $latitud;
+        $this->longitud = $longitud;
     }
 
-    public function getCantidad() {
+    // Getters
+    public function getPedido()
+    {
+        return $this->pedido;
+    }
+
+    public function getLongitud()
+    {
+        return $this->longitud;
+    }
+
+    public function getLatitud()
+    {
+        return $this->latitud;
+    }
+
+    public function getMunicipio()
+    {
+        return $this->municipio;
+    }
+
+    public function getVolumenTotal()
+    {
+        return $this->volumen_total;
+    }
+
+    public function getEstatus()
+    {
+        return $this->estatus;
+    }
+
+    public function getLargoMaximo()
+    {
+        return $this->largo_maximo;
+    }
+
+    public function getAnchoMaximo()
+    {
+        return $this->ancho_maximo;
+    }
+
+    public function getAltoMaximo()
+    {
+        return $this->alto_maximo;
+    }
+
+    public function getFecha()
+    {
+        return $this->fecha;
+    }
+
+    public function getDireccion()
+    {
+        return $this->direccion;
+    }
+
+    public function getCantidad()
+    {
         return $this->cantidad;
     }
 
-    private function obtenerCoordenadas() {
-        $direccionFormateada = urlencode($this->direccion);
-        $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$direccionFormateada}&key={$this->apiKey}";
+    public function getForaneo()
+    {
+        return $this->foraneo;
+    }
 
-        $response = @file_get_contents($url);
-        if ($response === false) {
-            echo "Error al intentar obtener datos de la API de Google Maps.<br>";
-            return;
-        }
-
-        $data = json_decode($response, true);
-
-        if (isset($data['status']) && $data['status'] === 'OK' && !empty($data['results'])) {
-            $coordenadas = $data['results'][0]['geometry']['location'];
-            $this->latitud = $coordenadas['lat'];
-            $this->longitud = $coordenadas['lng'];
-        } else {
-            echo "No se pudieron obtener las coordenadas para la dirección: " . htmlspecialchars($this->direccion) . "<br>";
-        }
+    public function setCoordenadas($lat, $lng)
+    {
+        $this->latitud = $lat;
+        $this->longitud = $lng;
     }
 }
-
-?>
