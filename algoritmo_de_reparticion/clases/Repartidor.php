@@ -166,7 +166,7 @@ class Repartidor
     {
         if ($descanso === 0 || $descanso === 1) {
             $this->descanso = $descanso;
-            echo "El descanso esta habilitado";
+            // echo "El descanso esta habilitado";
         } else {
             throw new Exception("Valor de descanso inválido: {$descanso}");
         }
@@ -258,7 +258,7 @@ class Repartidor
     {
         // Verificar si el repartidor tiene un vehículo asignado
         if ($this->vehiculo === null) {
-            echo "Repartidor {$this->nomina} no tiene un vehículo asignado.<br>";
+            // echo "Repartidor {$this->nomina} no tiene un vehículo asignado.<br>";
             return false;
         }
 
@@ -269,7 +269,7 @@ class Repartidor
         $capacidadVehiculo = $this->vehiculo->getCapacidad(); // Supone que la clase Vehiculo tiene un método getCapacidad()
 
         if ($volumenDespues > $capacidadVehiculo) {
-            echo "Repartidor {$this->nomina} excede la capacidad del vehículo. Volumen total: {$volumenDespues} > Capacidad: {$capacidadVehiculo}.<br>";
+            // echo "Repartidor {$this->nomina} excede la capacidad del vehículo. Volumen total: {$volumenDespues} > Capacidad: {$capacidadVehiculo}.<br>";
             return false;
         }
 
@@ -279,7 +279,7 @@ class Repartidor
         $anchoVehiculo = $this->vehiculo->getAncho();
 
         if ($largoMaximo > $largoVehiculo || $altoMaximo > $altoVehiculo || $anchoMaximo > $anchoVehiculo) {
-            echo "Repartidor {$this->nomina} no puede transportar el pedido debido a las dimensiones. Pedido (LxAxA): {$largoMaximo}x{$altoMaximo}x{$anchoMaximo}; Vehículo (LxAxA): {$largoVehiculo}x{$altoVehiculo}x{$anchoVehiculo}.<br>";
+            // echo "Repartidor {$this->nomina} no puede transportar el pedido debido a las dimensiones. Pedido (LxAxA): {$largoMaximo}x{$altoMaximo}x{$anchoMaximo}; Vehículo (LxAxA): {$largoVehiculo}x{$altoVehiculo}x{$anchoVehiculo}.<br>";
             return false;
         }
 

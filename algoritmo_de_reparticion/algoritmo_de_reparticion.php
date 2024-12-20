@@ -1,32 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algoritmo de Repartición</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        .repartidor {
-            margin-bottom: 20px;
-        }
-
-        .ruta {
-            margin-left: 20px;
-        }
-    </style>
-</head>
-
-<body>
-    <h1>Algoritmo de Repartición</h1>
     <?php
 
     // Incluir los archivos de conexión y clases
-    include '../php/conexion.php';
+    include('D:/xampp/htdocs/CITEI/php/conexion.php');
     include 'clases/Ordenamiento.php';
 
     try {
@@ -43,7 +19,7 @@
 
         // Verificar si hay pedidos y repartidores; si no, detener el flujo
         if (empty($pedidos) || empty($repartidores)) {
-            echo "<h3>No hay pedidos o repartidores disponibles. Proceso detenido.</h3>";
+            // echo "<h3>No hay pedidos o repartidores disponibles. Proceso detenido.</h3>";
             $conexion->close();
             exit();
         }
@@ -59,34 +35,34 @@
 
 
         if ($horaActual > $horaLimite) {
-            echo date_default_timezone_get();
-            echo "La hora actual ({$horaActual->format('H:i:s')}) supera la hora límite de asignación (18:00). No se asignarán más pedidos.<br>";
+            // echo date_default_timezone_get();
+            // echo "La hora actual ({$horaActual->format('H:i:s')}) supera la hora límite de asignación (18:00). No se asignarán más pedidos.<br>";
         } else {
             // Asignar los pedidos a los repartidores y registrar los envíos en la base de datos
             $nodosAsignados = $ordenamiento->asignarNodosARepartidores($pedidos, $repartidores, $sede);
         }
 
         // Verificar y mostrar los resultados
-        echo "<h2>Resultados de la Asignación de Pedidos</h2>";
+        // echo "<h2>Resultados de la Asignación de Pedidos</h2>";
         foreach ($nodosAsignados as $nominaRepartidor => $pedidosAsignados) {
-            echo "<div class='repartidor'>";
-            echo "<h3>Repartidor: {$nominaRepartidor}</h3>";
+            // echo "<div class='repartidor'>";
+            // echo "<h3>Repartidor: {$nominaRepartidor}</h3>";
             if (!empty($pedidosAsignados)) {
-                echo "<ul>";
+                // echo "<ul>";
                 foreach ($pedidosAsignados as $pedido) {
-                    echo "<li>Pedido: {$pedido->getPedido()}, Coordenadas: ({$pedido->getLatitud()}, {$pedido->getLongitud()})</li>";
+                    // echo "<li>Pedido: {$pedido->getPedido()}, Coordenadas: ({$pedido->getLatitud()}, {$pedido->getLongitud()})</li>";
                 }
-                echo "</ul>";
+                // echo "</ul>";
             } else {
-                echo "<p>No hay pedidos asignados.</p>";
+                // echo "<p>No hay pedidos asignados.</p>";
             }
-            echo "</div>";
+            // echo "</div>";
         }
 
         // Generar y mostrar rutas óptimas para cada repartidor asignado
         foreach ($nodosAsignados as $nominaRepartidor => $pedidosAsignados) {
-            echo "<div class='ruta'>";
-            echo "<h4>Ruta óptima para Repartidor {$nominaRepartidor}:</h4>";
+            // echo "<div class='ruta'>";
+            // echo "<h4>Ruta óptima para Repartidor {$nominaRepartidor}:</h4>";
 
             // Crear un array con las coordenadas de cada pedido para el repartidor actual
             $coordenadasPedidos = [];
@@ -138,16 +114,13 @@
                 $direcciones[] = "{$lat},{$lng}";
             }
             $baseURL .= implode("/", $direcciones);
-            echo "<a href='{$baseURL}' target='_blank'>Ver ruta en Google Maps</a><br><br>";
+            // echo "<a href='{$baseURL}' target='_blank'>Ver ruta en Google Maps</a><br><br>";
 
-            echo "</div>";
+            // echo "</div>";
         }
     } catch (Exception $e) {
-        echo "<h3>Error: " . htmlspecialchars($e->getMessage()) . "</h3>";
+        // echo "<h3>Error: " . htmlspecialchars($e->getMessage()) . "</h3>";
     }
 
     
     ?>
-</body>
-
-</html>
