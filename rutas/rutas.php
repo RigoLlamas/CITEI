@@ -19,13 +19,13 @@ $resultadoRepartidores = $conexion->query($consultaRepartidores);
 // Consulta para obtener los envíos asignados al repartidor específico
 $consultaEnvios = "
     SELECT e.Entrega, e.OrdenR, e.Cantidad, e.Vehiculo, p.Nombre AS Producto, v.Fecha, v.Estado, 
-           u.Calle, u.NumInterior, u.NumExterior, u.CP, u.Correo, m.Municipio 
+           u.Calle, u.NumInterior, u.NumExterior, u.CP, u.Correo, u.Telefono, m.Municipio 
     FROM envios e
     JOIN pedidos v ON e.NumVenta = v.NumVenta
     JOIN producto p ON e.Producto = p.PK_Producto
     JOIN usuarios u ON v.FK_Usuario = u.PK_Usuario
     JOIN municipio m ON u.FK_Municipio = m.PK_Municipio
-    WHERE e.Repartidor = 3
+    WHERE e.Repartidor = $nominaRepartidor
 ";
 $resultadoEnvios = $conexion->query($consultaEnvios);
 
@@ -190,7 +190,8 @@ $conexion->close();
                                 <p style="text-align: justify;"><strong>Direccion:</strong> <?= $envio['Calle'] ?> <?= $envio['NumInterior'] ?> <?= $envio['NumExterior'] ?><br>
                                     <strong>Municipio:</strong> <?= $envio['Municipio'] ?><br>
                                     <strong>CP:</strong> <?= $envio['CP'] ?><br>
-                                    <strong>Correo:</strong> <?= $envio['Correo'] ?>
+                                    <strong>Correo:</strong> <?= $envio['Correo'] ?><br>
+                                    <strong>Telefono:</strong> <?= $envio['Telefono'] ?>
                                 </p><br>
                             </div>
                             <!-- Botón para retirar este pedido -->
