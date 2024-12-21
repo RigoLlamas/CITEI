@@ -80,6 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <i class="fa-solid fa-user"></i>
                             </div>
                             <div class="user-options" id="user-options">
+                            <a href="../formularios/ver_formularios.php">Ver formularios</a>
                             <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
                             </div>
                         </div>
