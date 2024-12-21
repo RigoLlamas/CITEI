@@ -6,7 +6,7 @@ if (isset($_GET['nomina'])) {
     $nomina = (float)$_GET['nomina'];
 
     // Consulta para eliminar el repartidor
-    $sql = "DELETE FROM repartidor WHERE Nomina = $nomina";
+    $sql = "UPDATE repartidor SET Estado = 'Retirado' WHERE Nomina = $nomina";
 
     if (mysqli_query($conexion, $sql)) {
         // Redirigir a la página principal después de la eliminación

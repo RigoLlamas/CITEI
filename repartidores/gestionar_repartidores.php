@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Consulta para obtener la lista de repartidores
-$sql_lista = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor";
+$sql_lista = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado != 'Retirado";
 $resultado = mysqli_query($conexion, $sql_lista);
 
 $sql_contar = "SELECT COUNT(*) as total FROM repartidor";
