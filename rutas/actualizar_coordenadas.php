@@ -4,7 +4,7 @@ include '../php/conexion.php';
 if (isset($_GET['nomina'])) {
     $nominaRepartidor = intval($_GET['nomina']);
     $query = "
-        SELECT ST_X(Ubicacion) AS Longitud, ST_Y(Ubicacion) AS Latitud 
+        SELECT Longitud, Latitud 
         FROM repartidor 
         WHERE Nomina = $nominaRepartidor
     ";

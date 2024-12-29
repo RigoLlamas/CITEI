@@ -1,14 +1,12 @@
 <?php
 include '../php/conexion.php';
-//include '../algoritmo_de_reparticion/algoritmo_de_reparticion.php';
 
 $config = include '../config.php';
 $googleMapsApiKey = $config['api_keys']['google_maps_api_key'];
 
-// Obtén la nómina del repartidor desde la URL o una variable predefinida
+// Obtén la nómina del repartidor desde la URL en caso de existir
 $nominaRepartidor = isset($_GET['nomina']) ? intval($_GET['nomina']) : 0;
 
-// Consulta para obtener los repartidores ocupados
 $consultaRepartidores = "
     SELECT Nomina, Nombre, Apellidos, Estado, Longitud, Latitud 
     FROM repartidor 
@@ -17,7 +15,7 @@ $consultaRepartidores = "
 $resultadoRepartidores = $conexion->query($consultaRepartidores);
 
 // Consulta para obtener los envíos asignados al repartidor específico
-$consultaEnvios = "
+$consultaEnvios = $conexion->prepare("
     SELECT e.Entrega, e.OrdenR, e.Cantidad, e.Vehiculo, p.Nombre AS Producto, v.Fecha, v.Estado, 
            u.Calle, u.NumInterior, u.NumExterior, u.CP, u.Correo, u.Telefono, m.Municipio 
     FROM envios e
@@ -25,9 +23,11 @@ $consultaEnvios = "
     JOIN producto p ON e.Producto = p.PK_Producto
     JOIN usuarios u ON v.FK_Usuario = u.PK_Usuario
     JOIN municipio m ON u.FK_Municipio = m.PK_Municipio
-    WHERE e.Repartidor = $nominaRepartidor
-";
-$resultadoEnvios = $conexion->query($consultaEnvios);
+    WHERE e.Repartidor = ?
+");
+$consultaEnvios->bind_param("i", $nominaRepartidor);
+$consultaEnvios->execute();
+$resultadoEnvios = $consultaEnvios->get_result();
 
 // Procesa los datos obtenidos de ambas consultas
 $repartidores = [];
