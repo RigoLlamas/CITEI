@@ -49,12 +49,9 @@ $sql = "UPDATE usuarios
         WHERE PK_Usuario = $pk_usuario";
 
 if (mysqli_query($conexion, $sql)) {
-    echo "Perfil actualizado correctamente.";
+    header("Location: perfil_usuario.php?mensaje=success");
 } else {
-    echo "Error al actualizar el perfil: " . mysqli_error($conexion);
+    header("Location: perfil_usuario.php?mensaje=error");
 }
-
 mysqli_close($conexion);
-
-header("Location: perfil_usuario.php?mensaje=Perfil actualizado");
 exit();

@@ -39,6 +39,7 @@ if (!$result_municipios) {
     <title>CITEI - Perfil de Usuario</title>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -57,14 +58,14 @@ if (!$result_municipios) {
                     <input type="email" name="email" id="email" value="<?php echo $usuario['Correo']; ?>" minlength="1" maxlength="150" required disabled>
                 </p>
                 <p>Número de teléfono:
-                    <input type="tel" name="numero" id="numero" value="<?php echo $usuario['Telefono']; ?>" 
-                    pattern="[0-9]{10}" 
-                    title="Debe ser un número de 10 dígitos" 
-                    required>
+                    <input type="tel" name="numero" id="numero" value="<?php echo $usuario['Telefono']; ?>"
+                        pattern="[0-9]{10}"
+                        title="Debe ser un número de 10 dígitos"
+                        required>
                 </p>
                 <p>Nombre de la empresa si existe:
-                    <input type="text" name="empresa" id="empresa" value="<?php echo $usuario['Empresa']; ?>" 
-                    minlength="1" maxlength="150">
+                    <input type="text" name="empresa" id="empresa" value="<?php echo $usuario['Empresa']; ?>"
+                        minlength="1" maxlength="150">
                 </p>
             </div>
 
@@ -84,15 +85,15 @@ if (!$result_municipios) {
                 <p>Calle o dirección:
                     <input type="text" name="calle" id="calle" value="<?php echo $usuario['Calle']; ?>" minlength="1" maxlength="150" required>
                 </p>
-                
+
                 <div class="dos-columnas">
                     <div>
                         <p>Número exterior:
                             <input autocomplete="off" style="width: 80%;" type="text" name="num_exterior"
-                                id="num_exterior" 
-                                placeholder="1234" 
+                                id="num_exterior"
+                                placeholder="1234"
                                 minlength="1" maxlength="6"
-                                value="<?php echo $usuario['NumExterior']; ?>" 
+                                value="<?php echo $usuario['NumExterior']; ?>"
                                 required>
                         </p>
                     </div>
@@ -107,20 +108,43 @@ if (!$result_municipios) {
                 </div>
 
                 <div>
-                    <p>¿Desea recibir notificaciones?</p>
+                    <p>¿Desea recibir notificaciones de cambios en su pedido?</p>
                     <label for="notificacion_si" style="display: inline-block;">Sí:
-                        <input type="radio" id="notificacion_si" name="notificacion" value="1" style="display: inline;" 
-                        <?php if ($usuario['Notificaciones'] == 1) echo 'checked'; ?>>
+                        <input type="radio" id="notificacion_si" name="notificacion" value="1" style="display: inline;"
+                            <?php if ($usuario['Notificaciones'] == 1) echo 'checked'; ?>>
                     </label>
                     <label for="notificacion_no" style="display: inline-block; margin-left: 10px;">No:
-                        <input type="radio" id="notificacion_no" name="notificacion" value="0" style="display: inline;" 
-                        <?php if ($usuario['Notificaciones'] == 0) echo 'checked'; ?>>
+                        <input type="radio" id="notificacion_no" name="notificacion" value="0" style="display: inline;"
+                            <?php if ($usuario['Notificaciones'] == 0) echo 'checked'; ?>>
                     </label>
                 </div>
                 <button type="submit">Actualizar Perfil</button>
             </div>
         </div>
     </form>
+    <script>
+        // Obtener el parámetro "mensaje" de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const mensaje = urlParams.get('mensaje');
+
+        // Mostrar SweetAlert
+        if (mensaje === 'success') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Perfil actualizado',
+                text: 'Los datos del perfil se actualizaron correctamente.',
+                confirmButtonText: 'Aceptar'
+            });
+        } else if (mensaje === 'error') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Ocurrió un error al actualizar el perfil. Intente nuevamente.',
+                confirmButtonText: 'Aceptar'
+            });
+        }
+    </script>
+
 </body>
 
 </html>
