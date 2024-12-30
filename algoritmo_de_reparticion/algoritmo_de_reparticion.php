@@ -2,8 +2,8 @@
     <?php
 
     // Incluir los archivos de conexión y clases
-    include('D:/xampp/htdocs/CITEI/php/conexion.php');
-    include 'clases/Ordenamiento.php';
+    require_once 'conexion_algoritmo.php';
+    require_once 'clases/Ordenamiento.php';
 
     try {
         // Instanciar la clase Ordenamiento con la conexión existente

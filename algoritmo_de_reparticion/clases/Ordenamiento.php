@@ -13,8 +13,7 @@ class Ordenamiento
 
     public function __construct($conexion)
     {
-        $config = include('D:/xampp/htdocs/CITEI/config.php');
-        $this->apiKey = $config['api_keys']['google_maps_api_key'];
+        $this->apiKey = 'AIzaSyDTtTA9nfl0phn0i-i4VYbgRbvIB_MzaOs';
         $this->conexion = $conexion;
 
         if ($this->conexion->connect_error) {
