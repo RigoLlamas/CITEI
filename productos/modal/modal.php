@@ -31,7 +31,10 @@ if (isset($_SESSION['id_usuario'])) {
                 <div class="contenedor-boton">
                     <?php 
                     if ($isAdmin){
-                        echo '<button class="boton-modal" onclick="modificarProducto()">Modificar Producto</button>';
+                        echo '<div class="boton-modal">';
+                        echo '<button onclick="modificarProducto()">Modificar Producto</button>';
+                        echo '<button boton-eliminar" onclick="eliminarProducto()">Eliminar Producto</button>';
+                        echo '</div>';
                     } else{
                         echo '
 

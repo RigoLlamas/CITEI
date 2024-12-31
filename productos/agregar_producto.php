@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             archivosSeleccionados = [...archivos];
 
             informacionArchivos.innerHTML = archivosSeleccionados.length > 0 ?
-                "<p>Archivos seleccionados:<br>" + archivosSeleccionados.map(file => file.name).join('<br></p>') :
+                "<p>Archivos seleccionados:</p><br>" + archivosSeleccionados.map(file => file.name).join('<br></p>') :
                 "No se han seleccionado archivos.";
 
             contenedorPrevia.innerHTML = "";

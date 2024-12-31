@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 // Mostrar los nombres de los archivos seleccionados
                 informacionArchivos.innerHTML = archivosSeleccionados.length > 0 ?
-                    "<p>Archivos seleccionados:<br>" + archivosSeleccionados.map(file => file.name).join('<br></p>') :
+                    "<p>Archivos seleccionados:</p><br>" + archivosSeleccionados.map(file => file.name).join('<br></p>') :
                     "No se han seleccionado archivos.";
 
                 // Limpiar contenedor de vista previa

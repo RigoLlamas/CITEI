@@ -58,7 +58,7 @@ function abrirModal(producto) {
         // Mostrar el modal
         modal.style.display = "flex";
 
-        
+
     });
 }
 
@@ -72,7 +72,7 @@ function cerrarModal() {
     modal.classList.add('cerrar');
 
     // Esperar a que la animación termine antes de eliminar el modal
-    modalContent.addEventListener('animationend', function() {
+    modalContent.addEventListener('animationend', function () {
         modal.remove(); // Eliminar el modal del DOM después de la animación
     }, { once: true }); // Escuchar el evento solo una vez
 }
@@ -81,20 +81,20 @@ function cerrarModal() {
 function asignarEventosAProductos() {
     productos = document.querySelectorAll('.producto');
     productos.forEach(producto => {
-        producto.addEventListener('click', function() {
+        producto.addEventListener('click', function () {
             abrirModal(producto);
         });
     });
 }
 
 // Filtro de productos por nombre
-buscador.addEventListener('input', function() {
+buscador.addEventListener('input', function () {
     const filtro = buscador.value.toLowerCase();
 
     // Filtrar los productos según el input
     productos.forEach(producto => {
         const nombreProducto = producto.getAttribute('data-nombre');
-        
+
         if (nombreProducto.includes(filtro)) {
             producto.style.display = 'block'; // Mostrar el producto si coincide
         } else {
@@ -111,7 +111,7 @@ asignarEventosAProductos();
 
 
 // Redirigir al carrito o agregar producto dependiendo de si el botón está presente
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const botonCarrito = document.getElementById('boton-carrito');
 
     // Verificar si el usuario es administrador mediante una solicitud AJAX
@@ -123,12 +123,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 botonCarrito.textContent = 'Agregar Producto';
                 botonCarrito.setAttribute('id', 'boton-agregar-producto');
                 // Asignar la funcionalidad para agregar productos
-                botonCarrito.addEventListener('click', function() {
+                botonCarrito.addEventListener('click', function () {
                     window.location.href = 'agregar_producto.php'; // Redirige a la página para agregar productos
                 });
             } else {
                 // Funcionalidad del botón "Ir al Carrito" si no es administrador
-                botonCarrito.addEventListener('click', function() {
+                botonCarrito.addEventListener('click', function () {
                     window.location.href = '../carrito/carrito.php'; // Redirige a la página del carrito
                 });
             }
@@ -143,12 +143,60 @@ function modificarProducto() {
     window.location.href = 'gestionar_productos.php?id=' + productoId;
 }
 
+// Función para eliminar el producto
+function eliminarProducto() {
+    const modal = document.getElementById('modalProducto');
+    const productoId = modal.getAttribute('data-id'); // Obtener el ID del producto desde el modal
+
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Enviar la solicitud para eliminar el producto
+            fetch('eliminar_producto.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${productoId}`
+            })
+                .then(response => response.text())
+                .then(data => {
+                    Swal.fire({
+                        title: 'Producto eliminado',
+                        text: data,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        // Recargar la página para reflejar los cambios
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al eliminar el producto:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Hubo un problema al eliminar el producto.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                });
+        }
+    });
+}
+
+
 // Función para agregar al carrito
 function agregarAlCarrito() {
     const modal = document.getElementById('modalProducto');
     const cantidad = document.getElementById('cantidad').value;
     const productoId = modal.getAttribute('data-id'); // Obtener el ID del producto desde el modal
-    
+
     // Crear el cuerpo de los datos que enviaremos
     const datos = new FormData();
     datos.append('productoId', productoId);
@@ -159,22 +207,36 @@ function agregarAlCarrito() {
         method: 'POST',
         body: datos
     })
-    .then(response => response.text())
-    .then(data => {
-        Swal.fire({
-            title: 'Producto agregado',
-            text: data, 
-            icon: 'success',
-            confirmButtonText: 'Aceptar'
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json(); // Asumimos que el servidor responde con JSON
+        })
+        .then(data => {
+            if (data.error) {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.error, // Mostrar el mensaje de error del servidor
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Producto agregado',
+                    text: data.success || 'El producto se agregó al carrito.', // Mostrar el mensaje de éxito
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Hubo un problema al agregar el producto al carrito.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
         });
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        Swal.fire({
-            title: 'Error',
-            text: 'Hubo un problema al agregar el producto al carrito.',
-            icon: 'error',
-            confirmButtonText: 'Aceptar'
-        });
-    });
 }
