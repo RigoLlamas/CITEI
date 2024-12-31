@@ -676,8 +676,9 @@ gmp-map {
     flex-direction: column;
     justify-content: center; /* Centramos verticalmente */
     align-items: center;
-    max-height: 60rem;
+    max-height: 50rem;
     overflow-y: auto;
+    margin: auto;
 }
 
 /* Columna de texto */
@@ -687,8 +688,9 @@ gmp-map {
     flex-direction: column;
     justify-content: flex-start;
     text-align: left;
-    max-height: 50rem; /* Fijamos un máximo alto */
-    overflow-y: auto; /* Barra de desplazamiento vertical automática */
+    max-height: 50rem;
+    overflow-y: auto; 
+    margin: auto;
 }
 
 .modal-texto-columna h2 {
@@ -804,7 +806,6 @@ gmp-map {
     align-items: end;
 }
 
-
 .boton-modal{
     width: 100%;
     margin-top: 15%;
@@ -812,11 +813,9 @@ gmp-map {
     flex-direction: row;
 }
 
-@media (min-width: 768px) {
-    .boton-modal{
-        width: 100%;
-        margin-top: 50%;
-    }
+.boton-modal button{
+    margin: auto;
+    max-width: 40%;
 }
 
 /** Agregar producto **/

@@ -4,8 +4,11 @@ include '../php/conexion.php';
 
 if (isset($_SESSION['codigo_verificacion'])) {
     $codigo_enviado = $_SESSION['codigo_verificacion'];
+
+    // Agregar una bandera para mostrar el mensaje de SweetAlert
+    $mostrar_mensaje_correo = true;
 } else {
-    // Handle the missing verification code scenario, e.g., redirect or show an error
+    // Manejar el caso de código de verificación faltante
     echo "Código de verificación no encontrado. Por favor, vuelva a enviar el formulario.";
     exit();
 }
@@ -28,24 +31,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $num_exterior = trim($_SESSION['num_exterior']);
         $notificacion = isset($_SESSION['notificacion']) && $_SESSION['notificacion'] !== '' ? (int)$_SESSION['notificacion'] : 0;
 
-        if ($municipio == NULL) {
-            $direccion_completa = $calle . " " . $num_exterior . ", CP " . $codigo_postal;
-        } else {
-            $direccion_completa = $calle . " " . $num_exterior . ", " . $municipio . ", CP " . $codigo_postal;
-        }
+        $direccion_completa = $municipio === NULL
+            ? $calle . " " . $num_exterior . ", CP " . $codigo_postal
+            : $calle . " " . $num_exterior . ", " . $municipio . ", CP " . $codigo_postal;
 
         $coordenadas = obtenerCoordenadas($direccion_completa);
 
-        if ($coordenadas) {
-            $latitud = $coordenadas ? $coordenadas['latitud'] : "NULL";
-            $longitud = $coordenadas ? $coordenadas['longitud'] : "NULL";
-        } else {
-            $latitud = "NULL";
-            $longitud = "NULL";
-        }
+        $latitud = $coordenadas ? $coordenadas['latitud'] : "NULL";
+        $longitud = $coordenadas ? $coordenadas['longitud'] : "NULL";
 
         $sql = "INSERT INTO usuarios (FK_Municipio, Nombres, Apellidos, Empresa, Calle, Correo, Clave, Telefono, NumInterior, NumExterior, Notificaciones, CP, Latitud, Longitud)
             VALUES ('$municipio', '$nombre', '$apellidos', '$empresa', '$calle', '$email', '$contrasena', '$numero', '$num_interior', '$num_exterior', '$notificacion', '$codigo_postal', '$latitud', '$longitud')";
+
         if ($conexion->query($sql) === TRUE) {
             header("Location: ../login/login.html");
             exit();
@@ -53,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo "Error al insertar el registro: " . $conexion->error;
         }
 
-        // Cerrar la conexión
         $conexion->close();
     } else {
         $error_clave = true;
@@ -70,6 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>CITEI - Ingresar Clave</title>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
+    <!-- Incluir SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -86,11 +84,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
     </div>
     <script>
-        <?php if ($error_clave): ?>
+        // Mostrar el mensaje de SweetAlert al cargar la página
+        <?php if (isset($mostrar_mensaje_correo) && $mostrar_mensaje_correo): ?>
+            Swal.fire({
+                icon: 'success',
+                title: 'Correo enviado',
+                text: 'Se ha enviado un correo electrónico con el código de verificación a tu correo registrado.',
+                confirmButtonText: 'Aceptar'
+            });
+        <?php endif; ?>
+
+        <?php if (isset($error_clave) && $error_clave): ?>
             document.getElementById('clave').placeholder = "Clave incorrecta, intenta de nuevo";
         <?php endif; ?>
     </script>
-
 </body>
 
 </html>

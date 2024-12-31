@@ -6,10 +6,19 @@ $query = "SELECT PK_Municipio, Municipio FROM municipio";
 $result = mysqli_query($conexion, $query);
 
 if (!$result) {
-    die('Error en la consulta: ' . mysqli_error($conexion));
+    echo "<script>
+        Swal.fire({
+            title: 'Error en la consulta',
+            text: 'Hubo un problema al cargar los municipios. Por favor, intente más tarde.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        }).then(() => {
+            window.location.href = '../index.php'; // Redirige a la página principal
+        });
+    </script>";
+    exit;
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
