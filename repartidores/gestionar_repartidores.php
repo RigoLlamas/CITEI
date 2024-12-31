@@ -2,12 +2,12 @@
 include '../php/conexion.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $nomina = (float) $_POST['nomina'];
-    $nombre = trim($conexion->real_escape_string($_POST['nombre']));
-    $apellidos = trim($conexion->real_escape_string($_POST['apellidos']));
-    $estado = trim($conexion->real_escape_string($_POST['estado']));
-    $clave = trim($conexion->real_escape_string($_POST['clave']));
-    $horabandera = trim($conexion->real_escape_string($_POST['horabandera']));
+    $nomina = (int) $_POST['nomina'];
+    $nombre = trim($_POST['nombre']);
+    $apellidos = trim($_POST['apellidos']);
+    $estado = trim($_POST['estado']);
+    $clave = trim($_POST['clave']);
+    $horabandera = $_POST['horabandera'];
 
     // Verificar si la nómina ya existe
     $checkNominaSql = "SELECT COUNT(*) AS count FROM repartidor WHERE Nomina = ?";
@@ -18,13 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $row = mysqli_fetch_assoc($result);
 
     if ($row['count'] > 0) {
-        // Redirigir con un mensaje de error si la nómina ya existe
         header('Location: gestionar_repartidores.php?error=duplicate');
         exit();
     } else {
-        // La nómina no está registrada, proceder con la inserción
-        $sql = "INSERT INTO repartidor (Nomina, Nombre, Apellidos, Estado, Clave, HoraBandera)
-                VALUES (?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO repartidor (Nomina, Nombre, Apellidos, Estado, Clave, HoraBandera) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($conexion, $sql);
         mysqli_stmt_bind_param($stmt, 'isssss', $nomina, $nombre, $apellidos, $estado, $clave, $horabandera);
 
@@ -38,19 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Consulta para obtener la lista de repartidores
-$sql_lista = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado != 'Retirado";
+// Consultar lista de repartidores
+$sql_lista = "SELECT Nomina, Nombre, Apellidos, Estado FROM repartidor WHERE Estado != 'Retirado'";
 $resultado = mysqli_query($conexion, $sql_lista);
 
+// Contar repartidores
 $sql_contar = "SELECT COUNT(*) as total FROM repartidor";
 $resultado_contar = mysqli_query($conexion, $sql_contar);
 $total_repartidores = mysqli_fetch_assoc($resultado_contar)['total'];
-
-// Si hay 10 o más repartidores, deshabilitar el botón de agregar
 $deshabilitar_boton = $total_repartidores >= 10;
 
 mysqli_close($conexion);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
