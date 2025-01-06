@@ -47,9 +47,12 @@ document.addEventListener("DOMContentLoaded", function () {
         </header>
         <div class="nav-bg">
             <nav class="navegacion-principal contenedor">
-                <a href="../login/login.html" aria-label="Ir a la página de inicio de sesión">
-                    <img src="../img/logo.png" alt="Logo CITEI - Ir a la página de inicio de sesión">
-                </a>
+                <div style="display: flex; align-items: center;">
+                    <a href="../login/login.html" aria-label="Ir a la página de inicio de sesión" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+                        <img src="../img/logo.png" alt="Logo CITEI - Ir a la página de inicio de sesión" style="margin-right: 1rem; ">
+                        <p style="margin: 0; font-size: 16px;">Iniciar sesión</p>
+                    </a>
+                </div>
                 <button class="hamburger" id="hamburger">
                     <i class="fa-solid fa-bars"></i>
                 </button>
