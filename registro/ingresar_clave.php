@@ -1,58 +1,80 @@
 <?php
 session_start();
 include '../php/conexion.php';
-
-if (isset($_SESSION['codigo_verificacion'])) {
-    $codigo_enviado = $_SESSION['codigo_verificacion'];
-
-    // Agregar una bandera para mostrar el mensaje de SweetAlert
-    $mostrar_mensaje_correo = true;
-} else {
-    // Manejar el caso de código de verificación faltante
-    echo "Código de verificación no encontrado. Por favor, vuelva a enviar el formulario.";
-    exit();
-}
+include '../php/geocoding.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $codigo_ingresado = $_POST['clave'];
+    // Almacenar los datos enviados en sesión (persistencia temporal)
+    $_SESSION['codigo_ingresado'] = $_POST['clave'] ?? $_SESSION['codigo_ingresado'] ?? 0;
+    $_SESSION['codigo_verificacion'] = $_POST['codigo_verificacion'] ?? $_SESSION['codigo_verificacion'] ?? null;
+    $_SESSION['nombre'] = isset($_POST['nombre']) ? trim($_POST['nombre']) : $_SESSION['nombre'] ?? null;
+    $_SESSION['apellidos'] = isset($_POST['apellidos']) ? trim($_POST['apellidos']) : $_SESSION['apellidos'] ?? null;
+    $_SESSION['email'] = isset($_POST['email']) ? trim($_POST['email']) : $_SESSION['email'] ?? null;
+    $_SESSION['contrasena'] = isset($_POST['contraseña']) ? trim($_POST['contraseña']) : $_SESSION['contrasena'] ?? null;
+    $_SESSION['numero'] = isset($_POST['numero']) ? trim($_POST['numero']) : $_SESSION['numero'] ?? null;
+    $_SESSION['empresa'] = isset($_POST['empresa']) ? trim($_POST['empresa']) : $_SESSION['empresa'] ?? null;
+    $_SESSION['municipio'] = isset($_POST['municipio']) ? trim($_POST['municipio']) : $_SESSION['municipio'] ?? null;
+    $_SESSION['calle'] = isset($_POST['calle']) ? trim($_POST['calle']) : $_SESSION['calle'] ?? null;
+    $_SESSION['codigo_postal'] = isset($_POST['codigo']) ? trim($_POST['codigo']) : $_SESSION['codigo_postal'] ?? null;
+    $_SESSION['num_interior'] = isset($_POST['num_interior']) ? trim($_POST['num_interior']) : $_SESSION['num_interior'] ?? null;
+    $_SESSION['num_exterior'] = isset($_POST['num_exterior']) ? trim($_POST['num_exterior']) : $_SESSION['num_exterior'] ?? null;
+    $_SESSION['notificacion'] = isset($_POST['notificacion']) && $_POST['notificacion'] === 'true' ? 1 : $_SESSION['notificacion'] ?? 0;
 
-    if ($codigo_ingresado == $codigo_enviado) {
-        include '../php/geocoding.php';
-        $nombre = trim($_SESSION['nombre']);
-        $apellidos = trim($_SESSION['apellidos']);
-        $email = trim($_SESSION['email']);
-        $contrasena = trim($_SESSION['contrasena']);
-        $numero = trim($_SESSION['numero']);
-        $empresa = trim($_SESSION['empresa']);
-        $municipio = trim($_SESSION['municipio']);
-        $calle = trim($_SESSION['calle']);
-        $codigo_postal = trim($_SESSION['codigo_postal']);
-        $num_interior = trim($_SESSION['num_interior']);
-        $num_exterior = trim($_SESSION['num_exterior']);
-        $notificacion = isset($_SESSION['notificacion']) && $_SESSION['notificacion'] !== '' ? (int)$_SESSION['notificacion'] : 0;
+    // Verificar si se recibió el código de verificación
+    if ($_SESSION['codigo_verificacion']) {
+        if ($_SESSION['codigo_ingresado'] != 0) {
 
-        $direccion_completa = $municipio === NULL
-            ? $calle . " " . $num_exterior . ", CP " . $codigo_postal
-            : $calle . " " . $num_exterior . ", " . $municipio . ", CP " . $codigo_postal;
 
-        $coordenadas = obtenerCoordenadas($direccion_completa);
+            if ($_SESSION['codigo_ingresado'] == $_SESSION['codigo_verificacion']) {
+                // Construir dirección completa
+                $direccion_completa = $_SESSION['municipio'] === null
+                    ? $_SESSION['calle'] . " " . $_SESSION['num_exterior'] . ", CP " . $_SESSION['codigo_postal']
+                    : $_SESSION['calle'] . " " . $_SESSION['num_exterior'] . ", " . $_SESSION['municipio'] . ", CP " . $_SESSION['codigo_postal'];
 
-        $latitud = $coordenadas ? $coordenadas['latitud'] : "NULL";
-        $longitud = $coordenadas ? $coordenadas['longitud'] : "NULL";
+                // Obtener coordenadas de la dirección
+                $coordenadas = obtenerCoordenadas($direccion_completa);
+                $latitud = $coordenadas ? $coordenadas['latitud'] : null;
+                $longitud = $coordenadas ? $coordenadas['longitud'] : null;
 
-        $sql = "INSERT INTO usuarios (FK_Municipio, Nombres, Apellidos, Empresa, Calle, Correo, Clave, Telefono, NumInterior, NumExterior, Notificaciones, CP, Latitud, Longitud)
-            VALUES ('$municipio', '$nombre', '$apellidos', '$empresa', '$calle', '$email', '$contrasena', '$numero', '$num_interior', '$num_exterior', '$notificacion', '$codigo_postal', '$latitud', '$longitud')";
+                $stmt = $conexion->prepare("
+                INSERT INTO usuarios 
+                (FK_Municipio, Nombres, Apellidos, Empresa, Calle, Correo, Clave, Telefono, NumInterior, NumExterior, Notificaciones, CP, Latitud, Longitud) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+                $stmt->bind_param(
+                    'issssssssssidd',
+                    $_SESSION['municipio'],
+                    $_SESSION['nombre'],
+                    $_SESSION['apellidos'],
+                    $_SESSION['empresa'],
+                    $_SESSION['calle'],
+                    $_SESSION['email'],
+                    $_SESSION['contrasena'],
+                    $_SESSION['numero'],
+                    $_SESSION['num_interior'],
+                    $_SESSION['num_exterior'],
+                    $_SESSION['notificacion'],
+                    $_SESSION['codigo_postal'],
+                    $latitud,
+                    $longitud
+                );
 
-        if ($conexion->query($sql) === TRUE) {
-            header("Location: ../login/login.html");
-            exit();
-        } else {
-            echo "Error al insertar el registro: " . $conexion->error;
+                // Ejecutar y manejar el resultado
+                if ($stmt->execute()) {
+                    header("Location: ../login/login.html");
+                    exit();
+                } else {
+                    echo "Error al insertar el registro: " . $stmt->error;
+                }
+
+                $stmt->close();
+            } else {
+                $error_clave = true;
+            }
         }
-
-        $conexion->close();
     } else {
-        $error_clave = true;
+        echo "Código de verificación no encontrado. Por favor, vuelva a enviar el formulario.";
+        exit();
     }
 }
 ?>
@@ -66,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>CITEI - Ingresar Clave</title>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
-    <!-- Incluir SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -84,18 +105,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
     </div>
     <script>
-        // Mostrar el mensaje de SweetAlert al cargar la página
-        <?php if (isset($mostrar_mensaje_correo) && $mostrar_mensaje_correo): ?>
+        <?php
+        if ($_SESSION['notificacion'] != true) {
+
+        ?>
             Swal.fire({
                 icon: 'success',
                 title: 'Correo enviado',
                 text: 'Se ha enviado un correo electrónico con el código de verificación a tu correo registrado.',
                 confirmButtonText: 'Aceptar'
             });
-        <?php endif; ?>
-
+        <?php
+            $_SESSION['notificacion'] = true;
+        }
+        ?>
+        // Validar errores de clave
         <?php if (isset($error_clave) && $error_clave): ?>
-            document.getElementById('clave').placeholder = "Clave incorrecta, intenta de nuevo";
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    title: "Error",
+                    text: "Clave incorrecta, intenta de nuevo.",
+                    icon: "error",
+                    confirmButtonText: "Aceptar"
+                }).then(() => {
+                    document.getElementById('clave').placeholder = "Clave incorrecta, intenta de nuevo";
+                    document.getElementById('clave').value = ""; // Opcional: limpiar el campo
+                });
+            });
         <?php endif; ?>
     </script>
 </body>
