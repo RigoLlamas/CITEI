@@ -1,3 +1,4 @@
+/** Globales **/
 :root {
     --azul_claro: #7eb4ff;
     --azul: #3f7dc0;
@@ -6,6 +7,7 @@
     --negro: #000000;
     --fondo: #f0f0f0;
     --gris-claro: #ddd;
+    --rojo: #ff0000;
 }
 
 textarea,
@@ -32,7 +34,6 @@ html {
     box-sizing: inherit;
 }
 
-/** Globales **/
 button {
     width: 100%;
     padding: 0.75rem;
@@ -141,7 +142,29 @@ input[type="radio"] {
     margin: 0;
 }
 
-/**Menu de usuario**/
+/** Iconos **/
+.iconos i {
+    font-size: 2.5rem;
+    color: var(--negro);
+    transition: color 0.3s ease;
+}
+
+.iconos i:hover {
+    color: var(--azul_fuerte);
+}
+
+.iconos a {
+    padding: 2rem 2rem;
+    text-decoration: none;
+
+}
+
+.iconos {
+    justify-content: center;
+    text-align: center;
+}
+
+/** Menu de usuario **/
 .user-menu-container {
     position: relative;
     display: inline-block;
@@ -159,12 +182,11 @@ input[type="radio"] {
     color: var(--blanco);
 }
 
-/* Ocultar las opciones del usuario por defecto */
 .user-options {
     display: none;
     position: absolute;
-    top: 100%; /* Posicionar el menú debajo del ícono */
-    right: 0; /* Alinear a la derecha */
+    top: 100%;
+    right: 0;
     background-color: var(--blanco);
     padding: 1rem;
     border-radius: 0.5rem;
@@ -172,14 +194,12 @@ input[type="radio"] {
     z-index: 1000;
 }
 
-/* Mostrar las opciones del usuario cuando esté activo */
 .user-options.active {
     display: block;
 }
 
-/* Estilo de los enlaces dentro de user-options */
 .user-options a {
-    color: var(--azul); /* Asegurar buena visibilidad */
+    color: var(--azul); 
     background-color: var(--blanco);
     text-decoration: none;
     display: block;
@@ -217,7 +237,7 @@ input[type="radio"] {
     color: var(--blanco);
 }
 
-/* Imagen de la navegación */
+/** Imagen de la navegación **/
 .navegacion-principal img {
     display: none;
 }
@@ -237,20 +257,16 @@ input[type="radio"] {
     }
 }
 
-
-/* Ocultar el menú cuando no esté activo */
 .menu {
     display: none;
 }
 
-/* Mostrar el menú cuando esté activo */
 .menu.active {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* Estilos para el botón de hamburguesa */
 .hamburger {
     display: block;
     font-size: 2rem;
@@ -290,7 +306,7 @@ input[type="radio"] {
 }
 
 
-/**Pie de pagina **/
+/** Pie de pagina **/
 .pie {
     background-color: var(--blanco);
     box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
@@ -328,31 +344,7 @@ input[type="radio"] {
 
 }
 
-/** Iconos **/
-
-.iconos i {
-    font-size: 2.5rem;
-    color: var(--negro);
-    transition: color 0.3s ease;
-}
-
-.iconos i:hover {
-    color: var(--azul_fuerte);
-}
-
-.iconos a {
-    padding: 2rem 2rem;
-    text-decoration: none;
-
-}
-
-.iconos {
-    justify-content: center;
-    text-align: center;
-}
-
 /** Login **/
-
 .login__contenedor {
     display: flex;
     justify-content: center;
@@ -406,8 +398,15 @@ input[type="radio"] {
     }
 }
 
-/** Acerca de **/
+/** Registro **/
+.texto_registro p,
+.texto_registro label {
+    text-align: left;
+    display: flex;
+    flex-direction: column
+}
 
+/** Acerca de **/
 .dos-columnas img {
     visibility: hidden;
     max-width: 1rem;
@@ -441,7 +440,6 @@ gmp-map {
 }
 
 /** Envios **/
-
 @media (min-width: 768px) {
     .dos-columnas-envios {
         display: grid;
@@ -454,14 +452,6 @@ gmp-map {
         grid-template-columns: 1fr 1fr 1fr;
         column-gap: 2rem;
     }
-}
-
-/** Registro **/
-.texto_registro p,
-.texto_registro label {
-    text-align: left;
-    display: flex;
-    flex-direction: column
 }
 
 /** Productos **/
@@ -543,22 +533,21 @@ gmp-map {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Asegura que los elementos dentro del producto se distribuyan entre sí */
+    justify-content: space-between;
 }
 
 .texto_productos {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end; /* Mueve el texto hacia la parte inferior */
+    justify-content: flex-end;
     width: 100%;
     text-align: left;
     color: var(--negro);
-    margin-top: auto; /* Permite que el texto ocupe la parte inferior */
+    margin-top: auto;
 }
 
-/* Estilos para cuando los productos se ocultan y vuelven a aparecer */
 .producto.oculto {
-    display: none; /* Ocultar el producto */
+    display: none; 
 }
 
 .producto:hover {
@@ -584,22 +573,22 @@ gmp-map {
 @keyframes slideUp {
     from {
         transform: translateY(100%);
-        opacity: 0; /* Inicia transparente */
+        opacity: 0; 
     }
     to {
         transform: translateY(0);
-        opacity: 1; /* Termina completamente visible */
+        opacity: 1;
     }
 }
 
 @keyframes slideDown {
     from {
         transform: translateY(0);
-        opacity: 1; /* Comienza completamente visible */
+        opacity: 1;
     }
     to {
         transform: translateY(100%);
-        opacity: 0; /* Se vuelve transparente mientras baja */
+        opacity: 0; 
     }
 }
 
@@ -622,7 +611,7 @@ gmp-map {
 }
 
 
-/* Modal general */
+/** Modal general **/
 .modal {
     display: none;
     position: fixed;
@@ -641,7 +630,6 @@ gmp-map {
     animation: fadeOutBackground 0.7s ease;
 }
 
-/* Contenido del modal */
 .modal-content {
     border: 0.5rem solid var(--azul_claro);
     background-color: var(--blanco);
@@ -654,14 +642,13 @@ gmp-map {
     flex-direction: column;
     justify-content: center;
     animation: slideUp 0.7s ease;
-    overflow: hidden; /* Asegurar que el contenido no se desborde */
+    overflow: hidden;
 }
 
 .modal-content.cerrar {
     animation: slideDown 0.7s ease;
 }
 
-/* Cuerpo del modal en vista de pantallas más grandes */
 .modal-body {
     display: flex; 
     flex-direction: row; 
@@ -669,19 +656,17 @@ gmp-map {
     gap: 20px; 
 }
 
-/* Columna de imágenes */
 .modal-imagenes-columna {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Centramos verticalmente */
+    justify-content: center;
     align-items: center;
     max-height: 50rem;
     overflow-y: auto;
     margin: auto;
 }
 
-/* Columna de texto */
 .modal-texto-columna {
     flex: 1; 
     display: flex;
@@ -704,11 +689,9 @@ gmp-map {
     text-align: left; 
 }
 
-/* Imágenes dentro de la columna de imágenes */
-
 .modal-imagenes{
     height: 60rem;
-    justify-content: center; /* Centramos verticalmente */
+    justify-content: center;
     align-items: center;
 }
 
@@ -718,7 +701,6 @@ gmp-map {
     border-radius: 8px;
 }
 
-/* Botón de cierre */
 .close {
     position: absolute;
     right: 10px;
@@ -727,7 +709,6 @@ gmp-map {
     cursor: pointer;
 }
 
-/* Media queries para pantallas más pequeñas */
 @media (max-width: 768px) {
     .modal-content {
         width: 90%;
@@ -819,7 +800,6 @@ gmp-map {
 }
 
 /** Agregar producto **/
-
 .contendeor_medidas{
     display: flex;
     flex-direction: row;
@@ -847,12 +827,10 @@ gmp-map {
     margin: 1rem;
 }
 
-/* Ocultar el input original */
 #cargar_imagenes {
     display: none;
 }
 
-/* Botón personalizado */
 .boton-cargar {
     display: inline-block;
     background-color: var(--azul);
@@ -869,7 +847,6 @@ gmp-map {
     background-color: var(--azul_claro);
 }
 
-/* Contenedor de vista previa */
 .contenedor-previa {
     display: flex;
     flex-wrap: wrap;
@@ -877,7 +854,6 @@ gmp-map {
     margin-top: 20px;
 }
 
-/* Miniaturas de imágenes */
 .miniatura {
     position: relative;
     width: 100px;
@@ -887,7 +863,6 @@ gmp-map {
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Imagen dentro de la miniatura */
 .miniatura img {
     width: 100%;
     height: 100%;
@@ -895,7 +870,6 @@ gmp-map {
     border-radius: 5px;
 }
 
-/* Botón de eliminar */
 .eliminar-imagen {
     position: absolute;
     top: 5px;
@@ -917,7 +891,6 @@ gmp-map {
     background-color: rgba(255, 0, 0, 0.9);
 }
 
-/* Promociones */
 .contenedor-promociones {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -931,29 +904,30 @@ gmp-map {
 .mensaje-promociones {
     text-align: center;
     background-color: var(--gris-claro);
-    max-width: 600px; /* Ancho máximo */
+    max-width: 600px;
 }
 
 .mensaje-promociones h3 {
     font-size: 1.5rem;
-    color: #ff6b6b; /* Rojo suave */
+    
+    color: #ff6b6b;
     margin-bottom: 10px;
 }
 
 .mensaje-promociones p {
     font-size: 1rem;
-    color: #555; /* Gris suave */
+    color: #555; 
 }
 
 @media (max-width: 900px) {
     .contenedor-promociones {
-        grid-template-columns: repeat(2, 1fr); /* Cambia a dos columnas en pantallas más pequeñas */
+        grid-template-columns: repeat(2, 1fr); 
     }
 }
 
 @media (max-width: 600px) {
     .contenedor-promociones {
-        grid-template-columns: 1fr; /* Cambia a una columna en pantallas muy pequeñas */
+        grid-template-columns: 1fr;
     }
 }
 
@@ -969,29 +943,26 @@ gmp-map {
     max-width: 20rem;
 }
 
-/* Lista promociones */
+/** Lista promociones **/
 .lista-promociones {
     margin: 20px auto;
     padding: 20px;
     width: 100%;
     background-color: var(--fondo);
-    border: 1px solid var(--gris-claro); /* Borde gris claro */
-    border-radius: 10px; /* Bordes redondeados */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    border: 1px solid var(--gris-claro);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo para el título de la lista */
 .lista-promociones h3 {
     text-align: center;
 }
 
-/* Estilo para la lista no ordenada */
 .lista-promociones ul {
-    list-style-type: none; /* Quitar los puntos de la lista */
+    list-style-type: none; 
     padding: 0;
 }
 
-/* Estilo para cada elemento de la lista */
 .lista-promociones li {
     padding: 15px;
     margin-bottom: 10px;
@@ -1003,7 +974,6 @@ gmp-map {
     align-items: center;
 }
 
-/* Estilo para los enlaces de Modificar, Desplegar y Eliminar */
 .lista-promociones li a {
     text-decoration: none;
     padding: 5px 10px;
@@ -1014,20 +984,19 @@ gmp-map {
     background-color: var(--gris-claro);
 }
 
-/* Colores específicos para las acciones */
 .lista-promociones li a:nth-child(1) {
-    color: #007bff; /* Modificar en azul */
+    color: var(--azul);
 }
 
 .lista-promociones li a:nth-child(2) {
-    color: #28a745; /* Desplegar en verde */
+    color: #28a745; 
 }
 
 .lista-promociones li a:nth-child(3) {
-    color: #ff0000; /* Eliminar en rojo */
+    color: var(--rojo);
 }
 
-/* Clientes */
+/** Clientes **/
 .tabla-clientes {
     width: 90%;
     margin: 20px auto;
@@ -1079,7 +1048,7 @@ gmp-map {
     padding: 20px;
 }
 
-/* Repartidores */
+/** Repartidores **/
 .contenedor-repartidor p{
     text-align: left;
 }
@@ -1095,29 +1064,25 @@ gmp-map {
     margin-left: 80%;
 }
 
-/* Estilo para el contenedor de la lista de repartidores */
 .lista-repartidores {
     margin: 20px auto;
     padding: 20px;
     width: 100%;
     background-color: var(--fondo);
-    border: 1px solid var(--gris-claro); /* Borde gris claro */
-    border-radius: 10px; /* Bordes redondeados */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    border: 1px solid var(--gris-claro); 
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo para el título de la lista */
 .lista-repartidores h3 {
     text-align: center;
 }
 
-/* Estilo para la lista no ordenada */
 .lista-repartidores ul {
-    list-style-type: none; /* Quitar los puntos de la lista */
+    list-style-type: none; 
     padding: 0;
 }
 
-/* Estilo para cada elemento de la lista */
 .lista-repartidores li {
     padding: 15px;
     margin-bottom: 10px;
@@ -1129,7 +1094,6 @@ gmp-map {
     align-items: center;
 }
 
-/* Estilo para los enlaces de Modificar y Eliminar */
 .lista-repartidores li a {
     text-decoration: none;
     padding: 5px 10px;
@@ -1141,14 +1105,14 @@ gmp-map {
 }
 
 .lista-repartidores li a:nth-child(2) {
-    color: #ff0000; /* Eliminar en rojo */
+    color: var(--rojo); 
 }
 
 .lista-repartidores li a:nth-child(1) {
-    color: #007bff; /* Modificar en azul */
+    color: var(--azul); 
 }
 
-/* Vehiculos */
+/** Vehiculos **/
 .contenedor-vehiculo p{
     text-align: left;
 }
@@ -1165,29 +1129,25 @@ gmp-map {
 
 }
 
-/* Estilo para el contenedor de la lista de repartidores */
 .lista-vehiculos {
     margin: 20px auto;
     padding: 20px;
     width: 100%;
     background-color: var(--fondo);
-    border: 1px solid var(--gris-claro); /* Borde gris claro */
-    border-radius: 10px; /* Bordes redondeados */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    border: 1px solid var(--gris-claro); 
+    border-radius: 10px; 
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
 }
 
-/* Estilo para el título de la lista */
 .lista-vehiculos h3 {
     text-align: center;
 }
 
-/* Estilo para la lista no ordenada */
 .lista-vehiculos ul {
-    list-style-type: none; /* Quitar los puntos de la lista */
+    list-style-type: none;
     padding: 0;
 }
 
-/* Estilo para cada elemento de la lista */
 .lista-vehiculos li {
     padding: 15px;
     margin-bottom: 10px;
@@ -1199,7 +1159,6 @@ gmp-map {
     align-items: center;
 }
 
-/* Estilo para los enlaces de Modificar y Eliminar */
 .lista-vehiculos li a {
     text-decoration: none;
     padding: 5px 10px;
@@ -1211,16 +1170,15 @@ gmp-map {
 }
 
 .lista-vehiculos li a:nth-child(2) {
-    color: #ff0000; /* Eliminar en rojo */
+    color: var(--rojo);
 }
 
 .lista-vehiculos li a:nth-child(1) {
-    color: #007bff; /* Modificar en azul */
+    color: var(--azul); 
 }
 
-/* Estilo para la lista de productos del carrito */
 .contenedor-carrito {
-    width: 60%; /* Ocupa el 60% del lado izquierdo */
+    width: 60%; 
     background-color: var(--fondo);
     padding: 2rem;
     border-radius: 10px;
@@ -1235,10 +1193,9 @@ gmp-map {
     overflow-y: auto;
 }
 
-/* Estilos para cada producto en el carrito */
 .producto_carrito {
     display: flex;
-    gap: 2rem; /* Separación entre imagen y texto */
+    gap: 2rem; 
     background-color: var(--blanco);
     border-radius: 10px;
     padding: 1rem;
@@ -1252,7 +1209,7 @@ gmp-map {
     border-radius: 10px;
 }
 
-/* Información del producto */
+/** Carrito **/
 .info-producto {
     display: flex;
     flex-direction: column;
@@ -1266,9 +1223,6 @@ gmp-map {
     color: var(--negro);
 }
 
-
-
-/* Estilos para la cantidad */
 .cantidad {
     display: flex;
     align-items: center;
@@ -1296,7 +1250,6 @@ gmp-map {
     text-align: center;
 }
 
-/* Contenedor general para el carrito y la sección de envío */
 .contenedor-carrito-envio {
     display: flex;
     justify-content: space-between;
@@ -1306,31 +1259,29 @@ gmp-map {
     background-color: var(--fondo);
 }
 
-/* Ajustes para la columna del carrito */
 .contenedor-carrito {
-    flex: 2; /* El carrito ocupa más espacio */
+    flex: 2;
     background-color: var(--blanco);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     min-height: 42rem;
-    height: 100%; /* Ajustar la altura para que crezca con el contenido */
+    height: 100%;
 }
 
 .lista-productos {
-    max-height: 25rem; /* Limitar la altura máxima para permitir el scroll si hay muchos productos */
+    max-height: 25rem; 
     overflow-y: auto;
 }
 
-/* Ajustes para la columna de la sección de envío */
 .contenedor-envio {
-    flex: 1; /* La sección de envío ocupa menos espacio */
+    flex: 1; 
     background-color: var(--blanco);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     min-height: 36rem;
-    height: auto; /* Ajustar la altura para que crezca con el contenido */
+    height: auto;
 }
 
 .contenedor-envio button:hover, .contenedor-carrito button:hover {
@@ -1343,7 +1294,7 @@ gmp-map {
 
 .ofertas {
     padding: 20px;
-    background-color: #f9f9f9; /* Fondo claro para las ofertas */
+    background-color: var(--fondo); 
     border-radius: 8px;
     margin-top: 20px;
 }
@@ -1351,11 +1302,11 @@ gmp-map {
 .ofertas h2 {
     font-size: 1.5em;
     margin-bottom: 15px;
-    color: #333; /* Título de las ofertas */
+    color: #333; 
 }
 
 .oferta {
-    border: 1px solid #ddd;
+    border: 1px solid var(--gris-claro);
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 5px;
@@ -1390,8 +1341,7 @@ gmp-map {
 
 .producto_pedidos {
     display: flex;
-    gap: 2rem; /* Separación entre imagen y texto */
-    
+    gap: 2rem;     
     padding: 1rem;
 }
 
@@ -1406,7 +1356,7 @@ gmp-map {
     max-height: 400px;
     overflow-y: auto;
     padding-right: 10px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--gris-claro);
     margin-top: 20px;
 }
 
@@ -1414,7 +1364,7 @@ gmp-map {
     margin-bottom: 20px;
 }
 
-/* Rutas */
+/** Rutas **/
 .rutas-contenedor {
     display: flex;
     height: 70vh;
@@ -1424,22 +1374,20 @@ gmp-map {
     color: var(--negro);
 }
 
-/* Columna Izquierda */
 .columna-izquierda {
     width: 25%;
     padding: 10px;
     overflow-y: auto;
 }
 
-/* Quitar formato de los enlaces en la lista de repartidores */
 .columna-izquierda a {
-    color: inherit; /* Hereda el color del elemento padre */
-    text-decoration: none; /* Quita el subrayado */
+    color: inherit;
+    text-decoration: none; 
     font-size: 1.8rem;
 }
 
 .columna-izquierda a:hover {
-    text-decoration: underline; /* Opcional: subraya el enlace al pasar el ratón */
+    text-decoration: underline;
 }
 
 
@@ -1453,7 +1401,6 @@ gmp-map {
     border-bottom: 1px solid var(--azul_fuerte);
 }
 
-/* Columna Derecha */
 .columna-derecha {
     width: 75%;
     display: flex;
@@ -1461,7 +1408,6 @@ gmp-map {
     gap: 10px;
 }
 
-/* Fila Superior: Lista de Envíos */
 .fila-envios {
     flex: 1;
     background-color: var(--blanco);
@@ -1477,7 +1423,6 @@ gmp-map {
     width: 50%;
 }
 
-/* Fila Inferior: Mapa */
 .fila-mapa {
     flex: 1;
     padding: 10px;
