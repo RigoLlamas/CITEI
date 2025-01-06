@@ -1,9 +1,6 @@
 <?php
 session_start();
-include '../php/conexion.php'; 
-include '../php/verificar_existencia.php'; 
-
-
+include '../php/conexion.php';
 
 // Procesar el formulario solo si es una solicitud POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -18,12 +15,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Validar si el correo tiene un formato válido
             if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                // Preparar y ejecutar la consulta para verificar si el correo existe
                 $sql = "SELECT * FROM usuarios WHERE Correo = ?";
                 $stmt = $conexion->prepare($sql);
                 $stmt->bind_param("s", $email);
                 $stmt->execute();
                 $resultado = $stmt->get_result();
 
+                // Comprobar si el correo fue encontrado
                 if ($resultado->num_rows > 0) {
                     // Guardar el correo en la sesión
                     $_SESSION['correo'] = $email;
@@ -72,6 +71,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </form>
     </div>
-    <script src="correo.js"></script>
+    <script src="olvido_contraseña.js"></script>
 </body>
 </html>
