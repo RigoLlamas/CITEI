@@ -71,6 +71,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </form>
     </div>
-    <script src="olvido_contraseña.js"></script>
+    <script src="olvido_contrasena.js"></script>
 </body>
 </html>

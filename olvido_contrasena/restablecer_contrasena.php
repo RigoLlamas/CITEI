@@ -7,7 +7,7 @@ $errorClave = "";
 $successClave = "";
 
 if (!isset($_SESSION['correo'])) {
-    header("Location: olvido_contraseña.php?error=no_sesion");
+    header("Location: olvido_contrasena.php?error=no_sesion");
     exit();
 }
 

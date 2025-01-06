@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Validar el correo con olvido_contraseña.php
-        fetch('olvido_contraseña.php', {
+        // Validar el correo con olvido_contrasena.php
+        fetch('olvido_contrasena.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

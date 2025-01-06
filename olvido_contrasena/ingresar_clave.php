@@ -3,7 +3,7 @@ session_start();
 
 // Verifica que el correo esté en la sesión
 if (!isset($_SESSION['correo'])) {
-    header("Location: olvido_contraseña.php");
+    header("Location: olvido_contrasena.php");
     exit();
 }
 ?>
@@ -47,8 +47,8 @@ if (!isset($_SESSION['correo'])) {
 
                 // Verifica si ambos códigos coinciden
                 if (codigoIngresado === codigoGuardado) {
-                    // Si los códigos coinciden, redirigir a la página de restablecer contraseña
-                    window.location.href = 'restablecer_contraseña.php';
+                    // Si los códigos coinciden, redirigir a la página de restablecer contrasena
+                    window.location.href = 'restablecer_contrasena.php';
                 } else {
                     // Si el código no coincide, limpia el campo y muestra un mensaje de error
                     $('#clave').val('');
