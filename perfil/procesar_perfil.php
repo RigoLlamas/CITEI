@@ -17,11 +17,23 @@ $num_interior = $conexion->real_escape_string($_POST['num_interior']);
 $municipio = (int)$_POST['municipio'];
 $notificaciones = (int)$_POST['notificacion'];
 
-if ($municipio == 0) {
-    $direccion_completa = $calle . " " . $num_exterior;
+if ($municipio != 0) {
+    // Consulta para obtener el nombre del municipio
+    $sql_municipio = "SELECT Municipio FROM municipio WHERE PK_Municipio = $municipio";
+    $resultado_municipio = mysqli_query($conexion, $sql_municipio);
+
+    if ($resultado_municipio && mysqli_num_rows($resultado_municipio) > 0) {
+        $row_municipio = mysqli_fetch_assoc($resultado_municipio);
+        $nombre_municipio = $row_municipio['Municipio'];
+        $direccion_completa = $calle . " " . $num_exterior . ", " . $nombre_municipio;
+    } else {
+        // En caso de que no se encuentre el municipio
+        $direccion_completa = $calle . " " . $num_exterior;
+    }
 } else {
-    $direccion_completa = $calle . " " . $num_exterior . ", Municipio ID " . $municipio;
+    $direccion_completa = $calle . " " . $num_exterior;
 }
+
 
 $coordenadas = obtenerCoordenadas($direccion_completa);
 
