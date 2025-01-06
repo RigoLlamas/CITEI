@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <link rel="stylesheet" href="../css/style.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="icon" href="img/favicon-32x32.png" type="image/png">
         <header>
             <h1 class="titulo">CITEI</h1>
         </header>
