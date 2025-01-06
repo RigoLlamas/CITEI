@@ -5,22 +5,18 @@ class Pedido
     private $pedido;
     private $longitud;
     private $latitud;
-    private $municipio;
     private $volumen_total;
     private $estatus;
     private $largo_maximo;
     private $ancho_maximo;
     private $alto_maximo;
     private $fecha;
-    private $direccion;
     private $cantidad;
     private $foraneo;
 
-    public function __construct($pedido, $direccion, $municipio, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha, $cantidad, $foraneo, $latitud, $longitud)
+    public function __construct($pedido, $estatus, $largo_maximo, $alto_maximo, $ancho_maximo, $volumen_total, $fecha, $cantidad, $foraneo, $latitud, $longitud)
     {
         $this->pedido = $pedido;
-        $this->direccion = $direccion;
-        $this->municipio = $municipio;
         $this->estatus = $estatus;
         $this->largo_maximo = $largo_maximo;
         $this->ancho_maximo = $ancho_maximo;
@@ -47,11 +43,6 @@ class Pedido
     public function getLatitud()
     {
         return $this->latitud;
-    }
-
-    public function getMunicipio()
-    {
-        return $this->municipio;
     }
 
     public function getVolumenTotal()
@@ -82,11 +73,6 @@ class Pedido
     public function getFecha()
     {
         return $this->fecha;
-    }
-
-    public function getDireccion()
-    {
-        return $this->direccion;
     }
 
     public function getCantidad()
