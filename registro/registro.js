@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (result.isConfirmed) {
                     // Generar y guardar el código de verificación
                     const codigo = Math.floor(100000 + Math.random() * 900000);
-                    localStorage.setItem('codigo_verificacion', codigo);
 
                     // Obtener configuraciones de EmailJS
                     fetch('../php/obtener_email_config.php')
@@ -94,36 +93,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             return response.text(); // Cambiar a text() en lugar de json()
                         })
                         .then(() => {
-                            // Guardar el código en el servidor
-                            return fetch('guardar_codigo.php', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ codigo_verificacion: codigo })
+                            Swal.fire({
+                                title: 'Registro exitoso',
+                                text: 'Por favor, verifica tu correo para completar el registro.',
+                                icon: 'success',
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                document.getElementById('codigo_verificacion').value = codigo;
+                                document.getElementById('registroForm').appendChild(inputCodigo);
+                                document.getElementById('registroForm').submit();
                             });
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    title: 'Registro exitoso',
-                                    text: 'Por favor, verifica tu correo para completar el registro.',
-                                    icon: 'success',
-                                    confirmButtonText: 'Aceptar'
-                                }).then(() => {
-                                    // Agregar el código al formulario y enviarlo
-                                    const inputCodigo = document.createElement('input');
-                                    inputCodigo.type = 'hidden';
-                                    inputCodigo.id = 'codigo_verificacion';
-                                    inputCodigo.name = 'codigo_verificacion';
-                                    inputCodigo.value = codigo;
-                                    document.getElementById('registroForm').appendChild(inputCodigo);
-                                    document.getElementById('registroForm').submit();
-                                });
-                            } else {
-                                throw new Error('Error al guardar el código en el servidor.');
-                            }
                         });
                 }
             });

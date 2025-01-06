@@ -36,48 +36,49 @@ if (!$result) {
 
 <body>
     <h2 style="text-align: center;">Registro</h2>
-    <form id="registroForm" action="procesar_registro.php" method="POST" autocomplete="off">
+    <form id="registroForm" action="ingresar_clave.php" method="POST" autocomplete="off">
+        <input type="hidden" id="codigo_verificacion" name="codigo_verificacion">
         <div class="dos-columnas cuadro">
             <div class="texto_registro">
                 <h3>Ingresa tus datos personales</h3>
                 <p>Nombre:
-                    <input autocomplete="off" type="text" name="nombre" id="nombre" 
+                    <input autocomplete="off" type="text" name="nombre" id="nombre"
                         placeholder="Escribe tu nombre"
                         minlength="1" maxlength="150"
                         required>
                 </p>
                 <p>Apellidos:
-                    <input autocomplete="off" type="text" name="apellidos" id="apellidos" 
-                        placeholder="Escribe tu apellido" 
+                    <input autocomplete="off" type="text" name="apellidos" id="apellidos"
+                        placeholder="Escribe tu apellido"
                         minlength="1" maxlength="150"
                         required>
                 </p>
                 <p>Correo electrónico:
                     <input autocomplete="off" type="email" name="email" id="email"
-                        placeholder="Escribe tu correo electrónico" 
+                        placeholder="Escribe tu correo electrónico"
                         minlength="1" maxlength="150"
                         required>
                 </p>
                 <p>Contraseña:
                     <input autocomplete="off" type="password" name="contraseña" id="contraseña"
-                        placeholder="Escribe tu contraseña" 
+                        placeholder="Escribe tu contraseña"
                         minlength="5" maxlength="50"
                         required>
                 </p>
                 <p>Confirma tu contraseña:
                     <input autocomplete="off" type="password" name="confirmacion" id="confirmacion"
-                        placeholder="Confirma tu contraseña" 
+                        placeholder="Confirma tu contraseña"
                         minlength="5" maxlength="50"
                         required>
                 </p>
                 <p>Número de teléfono:
                     <input autocomplete="off" type="tel" name="numero" id="numero" pattern="[0-9]{10}"
-                        title="Debe ser un número de 10 dígitos" placeholder="Escribe tu numero celular" 
+                        title="Debe ser un número de 10 dígitos" placeholder="Escribe tu numero celular"
                         required>
                 </p>
                 <p>Nombre de la empresa si existe:
                     <input type="text" name="empresa" id="empresa"
-                    minlength="1" maxlength="150">
+                        minlength="1" maxlength="150">
                 </p>
             </div>
             <div class="texto_registro">
@@ -85,52 +86,52 @@ if (!$result) {
 
                 <p>Selecciona tu municipio:
                     <select name="municipio" id="municipio" required autocomplete="no">
-                    <option value=""></option>
+                        <option value=""></option>
                         <?php
-                            while ($row = mysqli_fetch_assoc($result)) {
+                        while ($row = mysqli_fetch_assoc($result)) {
                             echo '<option value="' . $row['PK_Municipio'] . '">' . $row['Municipio'] . '</option>';
                         }
                         ?>
                     </select>
-                    <p>Ingrese su calle o dirección en caso de no encontrar su municipio:
-                        <input autocomplete="off" type="text" name="calle" id="calle" placeholder="Escribe tu calle"
+                <p>Ingrese su calle o dirección en caso de no encontrar su municipio:
+                    <input autocomplete="off" type="text" name="calle" id="calle" placeholder="Escribe tu calle"
                         minlength="1" maxlength="150"
                         required>
-                    </p>
-                    <p>Código postal:
-                        <input autocomplete="off" type="number" name="codigo" id="codigo"
-                            placeholder="Escribe tu codigo postal" 
-                            min="10000" max="99999"
-                            required>
-                    </p>
-                    <div class="dos-columnas">
-                        <div>
-                            <p>Número exterior:
-                                <input autocomplete="off" style="width: 80%;" type="text" name="num_exterior"
-                                    id="num_exterior" 
-                                    placeholder="1234" 
-                                    minlength="1" maxlength="6"
-                                    required>
-                            </p>
-                        </div>
-                        <div>
-                            <p>Número interior:
-                                <input autocomplete="off" style="width: 80%;" type="text" name="num_interior"
-                                    id="num_interior"
-                                    minlength="1" maxlength="6" >
-                            </p>
-                        </div>
+                </p>
+                <p>Código postal:
+                    <input autocomplete="off" type="number" name="codigo" id="codigo"
+                        placeholder="Escribe tu codigo postal"
+                        min="10000" max="99999"
+                        required>
+                </p>
+                <div class="dos-columnas">
+                    <div>
+                        <p>Número exterior:
+                            <input autocomplete="off" style="width: 80%;" type="text" name="num_exterior"
+                                id="num_exterior"
+                                placeholder="1234"
+                                minlength="1" maxlength="6"
+                                required>
+                        </p>
                     </div>
                     <div>
-                        <p>¿Desea recibir notificaciones?</p>
-                        <label for="notificacion_si" style="display: inline-block;">Sí:
-                            <input type="radio" id="notificacion_si" name="notificacion" value="1" style="display: inline;">
-                        </label>
-                        <label for="notificacion_no" style="display: inline-block; margin-left: 10px;">No:
-                            <input type="radio" id="notificacion_no" name="notificacion" value="0" style="display: inline;" checked>
-                        </label>
+                        <p>Número interior:
+                            <input autocomplete="off" style="width: 80%;" type="text" name="num_interior"
+                                id="num_interior"
+                                minlength="1" maxlength="6">
+                        </p>
                     </div>
-                    <button type="submit">Registrarme</button>
+                </div>
+                <div>
+                    <p>¿Desea recibir notificaciones?</p>
+                    <label for="notificacion_si" style="display: inline-block;">Sí:
+                        <input type="radio" id="notificacion_si" name="notificacion" value="1" style="display: inline;">
+                    </label>
+                    <label for="notificacion_no" style="display: inline-block; margin-left: 10px;">No:
+                        <input type="radio" id="notificacion_no" name="notificacion" value="0" style="display: inline;" checked>
+                    </label>
+                </div>
+                <button type="submit">Registrarme</button>
             </div>
         </div>
     </form>
