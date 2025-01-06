@@ -67,20 +67,31 @@ $conexion->close();
 
         // Inicializa el mapa con un marcador en las coordenadas predeterminadas
         function initMap() {
-            const defaultLocation = {
-                lat: 20.673290,
-                lng: -103.416747
-            }; // Coordenadas predeterminadas
-            map = new google.maps.Map(document.getElementById("mapa"), {
-                center: defaultLocation,
-                zoom: 16,
-            });
+            document.addEventListener("DOMContentLoaded", function () {
+                const mapContainer = document.getElementById("mapa");
 
-            // Crear un marcador en la ubicación predeterminada
-            marker = new google.maps.Marker({
-                position: defaultLocation,
-                map: map,
-                title: "Mi ubicación inicial" // Título del marcador
+                // Asegúrate de que el contenedor existe antes de inicializar el mapa
+                if (!mapContainer) {
+                    console.error("El contenedor del mapa no existe.");
+                    return;
+                }
+
+                const defaultLocation = {
+                    lat: 20.673290,
+                    lng: -103.416747
+                }; // Coordenadas predeterminadas
+
+                map = new google.maps.Map(mapContainer, {
+                    center: defaultLocation,
+                    zoom: 16,
+                });
+
+                // Crear un marcador en la ubicación predeterminada
+                marker = new google.maps.Marker({
+                    position: defaultLocation,
+                    map: map,
+                    title: "Mi ubicación inicial" // Título del marcador
+                });
             });
         }
 
@@ -132,6 +143,7 @@ $conexion->close();
         });
     </script>
 </head>
+
 
 <body>
     <div class="rutas-contenedor">

@@ -15,7 +15,7 @@ return [
         'host' => 'citei.c34sm80cijk7.us-east-2.rds.amazonaws.com',
         'user' => 'adminCITEI',
         'password' => 'XjqcRn6EfvUuFIwu',
-        'dbname' => 'citei'
+        'dbname' => 'pruebas_citei'
     ],
 
     'email_service' => [
