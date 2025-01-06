@@ -16,12 +16,12 @@ document.getElementById("loginForm").addEventListener("submit", function (event)
         method: "POST",
         body: formData
     })
-    .then(response => response.text())
-    .then(data => {
-        return JSON.parse(data);
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Guardar datos en localStorage
+            localStorage.setItem("isAdmin", data.isAdmin); // True si es admin
+
             Swal.fire({
                 title: "¡Bienvenido!",
                 text: "Inicio de sesión exitoso. Redirigiendo...",
@@ -29,12 +29,12 @@ document.getElementById("loginForm").addEventListener("submit", function (event)
                 timer: 1000,
                 showConfirmButton: false
             }).then(() => {
-                window.location.href = "../productos/productos.php";
+                window.location.href = "../productos/productos.php"; // Redirigir a la página de productos
             });
         } else {
             Swal.fire({
                 title: "Error",
-                text: "Datos incorrectos. Inténtalo de nuevo.",
+                text: data.message,
                 icon: "error",
                 confirmButtonText: "Aceptar"
             }).then(() => {

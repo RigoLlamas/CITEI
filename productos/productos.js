@@ -57,8 +57,6 @@ function abrirModal(producto) {
 
         // Mostrar el modal
         modal.style.display = "flex";
-
-
     });
 }
 
@@ -67,13 +65,11 @@ function cerrarModal() {
     const modal = document.getElementById('modalProducto');
     const modalContent = modal.querySelector('.modal-content');
 
-    // Añadir la clase 'cerrar' para reproducir la animación de cierre
     modalContent.classList.add('cerrar');
     modal.classList.add('cerrar');
 
-    // Esperar a que la animación termine antes de eliminar el modal
     modalContent.addEventListener('animationend', function () {
-        modal.remove(); // Eliminar el modal del DOM después de la animación
+        modal.remove();
     }, { once: true }); // Escuchar el evento solo una vez
 }
 
@@ -114,27 +110,23 @@ asignarEventosAProductos();
 document.addEventListener('DOMContentLoaded', function () {
     const botonCarrito = document.getElementById('boton-carrito');
 
-    // Verificar si el usuario es administrador mediante una solicitud AJAX
-    fetch('../php/obtener_usuario.php')
-        .then(response => response.json())
-        .then(isAdmin => {
-            if (isAdmin) {
-                // Si es administrador, cambiar el botón de "Ir al Carrito" a "Agregar Producto"
-                botonCarrito.textContent = 'Agregar Producto';
-                botonCarrito.setAttribute('id', 'boton-agregar-producto');
-                // Asignar la funcionalidad para agregar productos
-                botonCarrito.addEventListener('click', function () {
-                    window.location.href = 'agregar_producto.php'; // Redirige a la página para agregar productos
-                });
-            } else {
-                // Funcionalidad del botón "Ir al Carrito" si no es administrador
-                botonCarrito.addEventListener('click', function () {
-                    window.location.href = '../carrito/carrito.php'; // Redirige a la página del carrito
-                });
-            }
-        })
-        .catch(error => console.error('Error al verificar si es admin:', error));
+    const isAdmin = localStorage.getItem('isAdmin') === 'true'; 
+
+    // Si es administrador, cambiar el botón de "Ir al Carrito" a "Agregar Producto"
+    if (isAdmin) {
+        botonCarrito.textContent = 'Agregar Producto';
+        botonCarrito.setAttribute('id', 'boton-agregar-producto');
+
+        botonCarrito.addEventListener('click', function () {
+            window.location.href = 'agregar_producto.php'; // Redirige a la página para agregar productos
+        });
+    } else {
+        botonCarrito.addEventListener('click', function () {
+            window.location.href = '../carrito/carrito.php'; // Redirige a la página del carrito
+        });
+    }
 });
+
 
 // Función para modificar el producto
 function modificarProducto() {
@@ -189,7 +181,6 @@ function eliminarProducto() {
         }
     });
 }
-
 
 // Función para agregar al carrito
 function agregarAlCarrito() {

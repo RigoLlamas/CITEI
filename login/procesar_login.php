@@ -19,29 +19,42 @@ try {
         if ($result->num_rows > 0) {
             $row = $result->fetch_assoc();
 
-            // Verificar si la clave es 1 y si la contraseña ingresada coincide (usando password_verify)
+            // Verificar si la contraseña ingresada coincide
             if ($claveIngresada == $row['Clave']) {
                 $_SESSION['id_usuario'] = $row['PK_Usuario'];
-                $result->free(); // Liberar el resultado antes de salir
-                echo json_encode(["success" => true]);
+
+                // Determinar si el usuario es administrador
+                $isAdmin = ($row['PK_Usuario'] == 1);
+
+                // Responder con éxito, PK_Usuario e indicador de administrador
+                echo json_encode([
+                    "success" => true,
+                    "isAdmin" => $isAdmin,
+                ]);
                 exit();
             } else {
-                $result->free(); // Liberar el resultado antes de salir
-                echo json_encode(["success" => false, "message" => "Usuario o contraseña incorrecta."]);
+                echo json_encode([
+                    "success" => false,
+                    "message" => "Usuario o contraseña incorrecta."
+                ]);
                 exit();
             }
         } else {
             $_SESSION['id_usuario'] = NULL;
-            echo json_encode(["success" => false, "message" => "Usuario o contraseña incorrecta."]);
+            echo json_encode([
+                "success" => false,
+                "message" => "Usuario o contraseña incorrecta."
+            ]);
             exit();
         }
-
-        $result->free(); // Esta línea ya no es estrictamente necesaria, pero la mantenemos por consistencia
     }
 
     $conexion->close();
 } catch (Exception $e) {
-    echo json_encode(["success" => false, "message" => "Error: " . $e->getMessage()]);
+    echo json_encode([
+        "success" => false,
+        "message" => "Error: " . $e->getMessage()
+    ]);
     exit();
 }
 ?>
