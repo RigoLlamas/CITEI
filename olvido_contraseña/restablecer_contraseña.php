@@ -56,7 +56,6 @@ $conexion->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CITEI - Restablecer contraseña</title>
-    <!-- Incluye los scripts adicionales -->
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

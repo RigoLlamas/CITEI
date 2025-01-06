@@ -35,8 +35,6 @@ $sql_promociones = "
       AND CURDATE() BETWEEN o.Despliegue AND IFNULL(c.LimiteTiempo, CURDATE() + INTERVAL 1 YEAR)
 ";
 
-
-// Preparar y ejecutar la consulta
 $stmt_promociones = mysqli_prepare($conexion, $sql_promociones);
 
 if (!$stmt_promociones) {

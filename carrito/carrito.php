@@ -64,7 +64,7 @@ $stmtEnvio->bind_param('i', $usuario_id);
 $stmtEnvio->execute();
 $resultadoEnvio = $stmtEnvio->get_result();
 
-// Consulta de ofertas activas usando sentencias preparadas
+// Consulta de promociones activas usando sentencias preparadas
 $consultaOfertas = "
     SELECT ao.Oferta, o.Tipo, o.Valor, o.Descripcion, o.Despliegue, o.Producto, c.LimiteTiempo AS Expiracion, ao.EstadoUso, ao.FechaUso
     FROM asignacion_ofertas ao

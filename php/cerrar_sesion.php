@@ -1,10 +1,9 @@
 <?php
-session_start(); // Iniciar la sesión
+session_start();
 
-// Destruir todas las variables de sesión
+// Destruir todas las variables de sesión incluyendo las cookies para evitar problemas
 $_SESSION = array();
 
-// Si se desea destruir completamente la sesión, también se debe borrar la cookie de sesión.
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,

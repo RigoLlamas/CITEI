@@ -73,11 +73,9 @@ $total_productos = $result_cantidad->fetch_assoc()['total_productos'];
                     // Ruta base de las imágenes
                     $ruta_base_imagenes = 'imagenes_productos/';
                     $ruta_logo = '../img/logo.png'; // Ruta del logo por defecto
-
-                    // Ruta a la carpeta de imágenes del producto
                     $carpeta_imagenes = $ruta_base_imagenes . 'producto_' . $row["PK_Producto"] . '/';
 
-                    // Verificar si existe una imagen con nombres "1.jpg" o "1.png" en la carpeta del producto
+                    // Verificar si existe una imagen
                     $ruta_imagen_jpg = $carpeta_imagenes . '1.jpg';
                     $ruta_imagen_png = $carpeta_imagenes . '1.png';
 
@@ -128,7 +126,6 @@ $total_productos = $result_cantidad->fetch_assoc()['total_productos'];
             ?>
         </div>
         <div class="cuadro">
-            <!-- Campo de búsqueda -->
             <div style="text-align: center; margin-bottom: 2rem; display: flex; flex-direction: row;">
                 <input type="text" id="buscador" placeholder="Buscar producto por nombre" style="padding: 10px; width: 70%; "
                     maxlength="150">
@@ -163,8 +160,7 @@ $total_productos = $result_cantidad->fetch_assoc()['total_productos'];
                 while ($row = $productos->fetch_assoc()) {
                     // Ruta a la carpeta de imágenes del producto
                     $carpeta_imagenes = $ruta_base_imagenes . 'producto_' . $row["PK_Producto"] . '/';
-
-                    $ruta_imagen = $ruta_logo; // Por defecto, usamos el logo
+                    $ruta_imagen = $ruta_logo; 
 
                     // Verificar si existe alguna imagen válida en los formatos soportados
                     if (is_dir($carpeta_imagenes)) {

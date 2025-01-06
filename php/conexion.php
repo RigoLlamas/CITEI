@@ -7,11 +7,10 @@
     $password = $config['database']['password'];
     $dbname = $config['database']['dbname'];
 
-    // Crear conexión
+    // Crear conexión y verificamos
     $conexion = new mysqli($servername, $username, $password, $dbname);
     $conexion->set_charset("utf8mb4");
 
-    // Verificar conexión
     if ($conexion->connect_error) {
         die("Conexión fallida: " . $conexion->connect_error);
     }
