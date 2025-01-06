@@ -11,7 +11,17 @@ if (isset($data['mision'], $data['vision'], $data['objetivo'])) {
     $file_path = 'mision_vision_objetivo.txt';
     $new_content = $data['mision'] . "###" . $data['vision'] . "###" . $data['objetivo'];
 
-    if (file_put_contents($file_path, $new_content)) {
+    // Verificar si el archivo existe, y crearlo si no
+    if (!file_exists($file_path)) {
+        $file_created = touch($file_path);
+        if (!$file_created) {
+            echo json_encode(['success' => false, 'message' => 'No se pudo crear el archivo.']);
+            exit;
+        }
+    }
+
+    // Escribir en el archivo
+    if (file_put_contents($file_path, $new_content) !== false) {
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['success' => false, 'message' => 'No se pudo escribir en el archivo.']);
