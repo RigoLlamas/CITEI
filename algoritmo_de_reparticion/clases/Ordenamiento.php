@@ -170,9 +170,10 @@ class Ordenamiento
         if (!$resultadoRepartidores) {
             return $repartidores;
         }
-
+        
         // Verificar que haya repartidores disponibles
         if ($resultadoRepartidores->num_rows == 0) {
+            
             return $repartidores;
         }
 
@@ -181,9 +182,10 @@ class Ordenamiento
         $resultadoVehiculos = $this->conexion->query($sqlVehiculos);
 
         if (!$resultadoVehiculos) {
+            
             return $repartidores;
         }
-
+        
         // Almacenar los vehículos disponibles en un arreglo
         $vehiculosDisponibles = [];
         while ($filaVehiculo = $resultadoVehiculos->fetch_assoc()) {
@@ -196,6 +198,7 @@ class Ordenamiento
                 $filaVehiculo['Estado'],
                 $filaVehiculo['KilometrosRecorridos']
             );
+            
         }
 
         // Crear repartidores mientras haya repartidores disponibles

@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 confirmButtonText: 'Aceptar'
                             }).then(() => {
                                 document.getElementById('codigo_verificacion').value = codigo;
-                                document.getElementById('registroForm').appendChild(inputCodigo);
+                                document.getElementById('registroForm').appendChild(codigo_verificacion);
                                 document.getElementById('registroForm').submit();
                             });
                         });
