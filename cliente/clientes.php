@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 // Obtener los clientes desde la base de datos
 try {

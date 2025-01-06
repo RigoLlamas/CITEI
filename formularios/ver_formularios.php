@@ -1,7 +1,7 @@
 <?php
-include '../php/conexion.php'; // Archivo de conexión a la base de datos
+include '../php/conexion.php'; 
+include '../php/solo_admins.php';
 
-// Consultar los formularios
 try {
     $query = "SELECT PK_Form, Fecha, Duracion, Repartidor FROM formulario";
     $result = $conexion->query($query);
@@ -19,8 +19,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formularios Registrados</title>
-    <link rel="stylesheet" href="../css/style.css"> <!-- Usamos el CSS del archivo proporcionado -->
+    <title>CITEI - Formularios Registrados</title>
     <script src="../js/pie.js"></script>
     <script src="../js/navbar.js"></script>
 </head>
@@ -79,7 +78,6 @@ try {
                 }
             });
 
-            // Mostrar mensaje si no hay resultados
             const sinResultados = document.querySelector('.sin-resultados');
             if (!resultados && sinResultados) {
                 sinResultados.style.display = 'block';

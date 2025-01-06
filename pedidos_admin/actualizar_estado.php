@@ -1,11 +1,6 @@
 <?php
 include('../php/conexion.php');
-
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
-ini_set('error_log', '../logs/error_log.log');
-header('Content-Type: application/json');
-
+include '../php/solo_admins.php';
 $response = ["success" => false, "message" => "Solicitud inválida."];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

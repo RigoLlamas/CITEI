@@ -1,5 +1,6 @@
 <?php
-include '../php/conexion.php'; // Conexión a la base de datos
+include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 // Validar que se haya recibido un ID de formulario
 $idFormulario = isset($_GET['id']) ? intval($_GET['id']) : 0;

@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 // Verificar si se ha pasado el ID de la oferta
 if (isset($_GET['oferta'])) {

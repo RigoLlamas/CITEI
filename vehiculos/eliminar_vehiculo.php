@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 // Verificar si se ha recibido la placa del vehículo
 if (isset($_GET['placa'])) {

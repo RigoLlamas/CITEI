@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 if (isset($_GET['nomina'])) {
     $nominaRepartidor = intval($_GET['nomina']);

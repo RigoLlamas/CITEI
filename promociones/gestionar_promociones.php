@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 // Consulta para obtener lista de promociones
 $sql_lista = "

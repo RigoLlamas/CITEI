@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 // Obtener el ID de la oferta desde la URL
 if (isset($_GET['oferta'])) {

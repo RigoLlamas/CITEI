@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $productoId = $_POST['id'] ?? null;

@@ -1,6 +1,7 @@
 <?php
 // Conexión a la base de datos
 include('../php/conexion.php');
+include '../php/solo_admins.php';
 
 // Función para obtener el historial de pedidos por año, mes o día
 function obtenerHistorialPedidos($conexion, $filtro = [])
@@ -77,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
     <script type="text/javascript"
         src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
     </script>
-    <script src="../js/notificaciones.js"></script>
+    <script src="pedidos.js"></script>
 </head>
 
 <body>

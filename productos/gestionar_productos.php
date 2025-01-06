@@ -1,8 +1,7 @@
 <?php
 // Incluir la conexión a la base de datos
 include '../php/conexion.php';
-
-
+include '../php/solo_admins.php';
 
 // Obtener el producto si existe un ID pasado por la URL
 $producto = null;

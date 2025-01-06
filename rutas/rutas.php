@@ -1,5 +1,6 @@
 <?php
 include '../php/conexion.php';
+include '../php/solo_admins.php';
 
 $config = include '../config.php';
 $googleMapsApiKey = $config['api_keys']['google_maps_api_key'];

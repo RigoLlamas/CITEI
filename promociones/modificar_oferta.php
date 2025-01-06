@@ -1,3 +1,8 @@
+<?php
+include '../php/conexion.php';
+include '../php/solo_admins.php';
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -12,9 +17,6 @@
 
 <body>
     <?php
-    // Incluir archivos necesarios
-    include '../php/conexion.php';
-
     // Obtener el ID de la oferta desde la URL
     if (!isset($_GET['oferta']) || !is_numeric($_GET['oferta'])) {
         echo "<script>
