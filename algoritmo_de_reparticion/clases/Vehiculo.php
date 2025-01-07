@@ -95,7 +95,7 @@ class Vehiculo
     public function getCapacidad()
     {
         if ($this->largo <= 0 || $this->alto <= 0 || $this->ancho <= 0) {
-            echo "Dimensiones inválidas para el vehículo con placa {$this->placa}./n";
+            echo "Dimensiones inválidas para el vehículo con placa {$this->placa}.\n";
             return 0;
         }
         return $this->largo * $this->alto * $this->ancho;

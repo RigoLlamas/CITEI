@@ -216,7 +216,7 @@ class Repartidor
         if ($this->vehiculo !== null) {
             $this->vehiculo->agregarKilometros($kilometros);
         } else {
-            echo "Repartidor {$this->nomina} no tiene vehículo asignado. No se pueden agregar kilómetros./n";
+            echo "Repartidor {$this->nomina} no tiene vehículo asignado. No se pueden agregar kilómetros.\n";
         }
     }
 
@@ -251,7 +251,7 @@ class Repartidor
     {
         // Verificar si el repartidor tiene un vehículo asignado
         if ($this->vehiculo === null) {
-            echo "El repartidor {$this->nomina} no tiene vehiculon/n";
+            echo "El repartidor {$this->nomina} no tiene vehiculon\n";
             return false;
         }
 
@@ -262,7 +262,7 @@ class Repartidor
         $capacidadVehiculo = $this->vehiculo->getCapacidad();
 
         if ($volumenDespues > $capacidadVehiculo) {
-            echo "El repartidor {$this->nomina} no le queda espacio/n";
+            echo "El repartidor {$this->nomina} no le queda espacio\n";
             return false;
         }
 
@@ -272,7 +272,7 @@ class Repartidor
         $anchoVehiculo = $this->vehiculo->getAncho();
 
         if ($largoMaximo > $largoVehiculo || $altoMaximo > $altoVehiculo || $anchoMaximo > $anchoVehiculo) {
-            echo "El repartidor {$this->nomina} no puede trasportaar, carga maxima/n";
+            echo "El repartidor {$this->nomina} no puede trasportaar, carga maxima\n";
             return false;
         }
 
