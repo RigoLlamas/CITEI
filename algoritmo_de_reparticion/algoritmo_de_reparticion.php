@@ -10,16 +10,16 @@ try {
 
     // Obtener los pedidos desde la base de datos
     $pedidos = $ordenamiento->obtenerPedidosDesdeBD();
-    echo "Pedidos obtenidos<br>";
+    echo "Pedidos obtenidos/n";
     // Crear repartidores disponibles usando Ordenamiento
     $repartidores = $ordenamiento->crearRepartidoresDisponibles();
-    echo "Repartidores obtenidos<br>";
+    echo "Repartidores obtenidos/n";
     // Verificar si hay pedidos y repartidores; si no, detener el flujo
     if (empty($pedidos) || empty($repartidores)) {
         if (empty($pedidos))
-            echo "Pedidos no obtenidos<br>";
+            echo "Pedidos no obtenidos/n";
         if (empty($repartidores))
-            echo "Repartidor no obtenidos<br>";
+            echo "Repartidor no obtenidos/n";
         $conexion->close();
         exit();
     }
@@ -30,13 +30,13 @@ try {
         'longitud' => -103.347447
     ];
 
-    $horaLimite = new DateTime('18:00:00');
+    $horaLimite = new DateTime('23:59:00');
     $horaActual = new DateTime();
-    echo "Hora actual: " . $horaActual->format('H:i:s') . "<br>";
+    echo "Hora actual: " . $horaActual->format('H:i:s') . "/n";
 
     if ($horaActual < $horaLimite) {
         $nodosAsignados = $ordenamiento->asignarNodosARepartidores($pedidos, $repartidores, $sede);
-        echo "Se asignaron nodos a los repartidores<br>";
+        echo "Se asignaron nodos a los repartidores/n";
     }
 
     // Generar y mostrar rutas óptimas para cada repartidor asignado
@@ -64,6 +64,8 @@ try {
 } catch (Exception $e) {
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
