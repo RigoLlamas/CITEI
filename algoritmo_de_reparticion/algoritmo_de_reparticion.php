@@ -30,7 +30,7 @@ try {
         'longitud' => -103.347447
     ];
 
-    $horaLimite = new DateTime('23:59:00');
+    $horaLimite = new DateTime('18:00:00');
     $horaActual = new DateTime();
     echo "Hora actual: " . $horaActual->format('H:i:s') . "\n";
 

@@ -63,7 +63,7 @@ class Repartidor
                 throw new Exception("Formato inválido para HoraLimite: {$horaLimite}");
             }
         } else {
-            $this->horaLimite = new DateTime('23:59:00'); // Valor predeterminado
+            $this->horaLimite = new DateTime('18:00:00'); // Valor predeterminado
         }
 
         $this->vehiculo = $vehiculo;
