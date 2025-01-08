@@ -278,15 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const cantidadCompras = document.getElementById('cantidad_compras') ? parseInt(document.getElementById('cantidad_compras').value) || null : null;
             const cantidadProductos = document.getElementById('cantidad_productos') ? parseInt(document.getElementById('cantidad_productos').value) || null : null;
 
-            console.log('Valores obtenidos del formulario:');
-            console.log('Tipo de oferta:', tipoOferta);
-            console.log('Valor de oferta:', valorOferta);
-            console.log('Tipo de condición:', tipoCondicion);
-            console.log('Rango de validación:', despliegue);
-            console.log('Expiración:', expiracion);
-            console.log('Cantidad de compras:', cantidadCompras);
-            console.log('Cantidad de productos:', cantidadProductos);
-
             // Validación de que los valores sean mayores que 0
             if (valorOferta <= 0) {
                 Swal.fire({

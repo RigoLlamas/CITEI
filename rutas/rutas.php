@@ -226,12 +226,9 @@ if (isset($_GET['json']) && $_GET['json'] == 1) {
 
                         // Validamos si las coordenadas han cambiado
                         if (currentLat !== newLat || currentLng !== newLng) {
-                            console.log('Las coordenadas cambiaron. Actualizando el marcador...');
                             currentLat = newLat;
                             currentLng = newLng;
                             updateMarker(newLat, newLng, `Repartidor ${nomina}`);
-                        } else {
-                            console.log('Las coordenadas NO cambiaron. No se actualiza el marcador.');
                         }
                     } else {
                         console.error(data.error);

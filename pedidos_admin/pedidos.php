@@ -268,8 +268,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['textcodigo'], $_POST['
                         })
                         .then(response => response.json())
                         .then(data => {
-                            console.log("Respuesta completa de actualizar_estado.php:", data); // Verifica toda la respuesta
-
                             if (data.success) {
                                 Swal.fire({
                                     icon: 'success',

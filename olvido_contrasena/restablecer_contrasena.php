@@ -62,7 +62,7 @@ $conexion->close();
 </head>
 <body>
     <div class="login__contenedor">
-        <form id="restablecerForm" class="login__formulario" action="restablecer_contraseña.php" method="POST">
+        <form id="restablecerForm" class="login__formulario" action="restablecer_contrasena.php" method="POST">
             <div class="login__datos" style="margin-bottom: 5.84rem;">
                 <label for="nueva_clave">Nueva contraseña</label>
                 <input id="nueva_clave" type="password" name="nueva_clave" 
