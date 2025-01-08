@@ -120,7 +120,6 @@ if (isset($_GET['json']) && $_GET['json'] == 1) {
         function loadMarkers() {
 
             if (!nomina) {
-                console.error("Nómina del repartidor no proporcionada.");
                 return;
             }
 

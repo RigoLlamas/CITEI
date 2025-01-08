@@ -325,7 +325,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         })
                         .catch(err => {
                             Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
-                            console.error('Error:', err);
                         });
                 }
             });
