@@ -7,12 +7,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Validar si el correo no está vacío y tiene un formato válido
         if (emailUsuario === '') {
-            console.log("El campo de correo está vacío.");
             return;
         }
 
         if (!emailRegex.test(emailUsuario)) {
-            console.log("El formato del correo es inválido.");
             return;
         }
 
@@ -32,8 +30,6 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => {
             if (response.status === "success") {
-                console.log("Correo válido. Continuando con el envío...");
-
                 // Generar un código de verificación de 6 dígitos
                 const codigo = Math.floor(100000 + Math.random() * 900000);
                 localStorage.setItem('codigo_verificacion', codigo); // Almacena el código en localStorage
@@ -71,8 +67,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             body: JSON.stringify(data)
                         })
                         .then(() => {
-                            console.log("Correo enviado exitosamente.");
-
                             // Redirigir a la página de ingreso de clave
                             window.location.href = 'ingresar_clave.php';
                         })
@@ -84,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.error("Error al obtener la configuración del servicio de email:", error);
                     });
             } else {
-                console.log(response.message); // Mostrar mensaje de error del servidor
             }
         })
         .catch(error => {

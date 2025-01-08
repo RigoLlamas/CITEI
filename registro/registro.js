@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         })
         .catch(error => {
-            console.error('Error en el proceso de registro:', error);
             Swal.fire({
                 title: 'Error',
                 text: 'Hubo un problema al procesar el registro. Por favor, inténtalo de nuevo.',

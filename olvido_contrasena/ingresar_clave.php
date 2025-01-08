@@ -53,7 +53,6 @@ if (!isset($_SESSION['correo'])) {
                     // Si el código no coincide, limpia el campo y muestra un mensaje de error
                     $('#clave').val('');
                     document.getElementById('clave').placeholder = "Código incorrecto, inténtalo de nuevo";
-                    console.log("Código incorrecto, inténtalo de nuevo.");
                 }
             });
         });

@@ -29,7 +29,6 @@ $googleMapsApiKey = $config['api_keys']['google_maps_api_key'];
                     document.getElementById('contactanosText').innerText = data.contactanos;
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -90,7 +89,6 @@ $googleMapsApiKey = $config['api_keys']['google_maps_api_key'];
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error de red',

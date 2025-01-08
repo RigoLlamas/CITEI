@@ -71,6 +71,7 @@ li,
 th {
     font-size: 1.8rem;
     text-align: center;
+    align-content: center;
 }
 
 td{
@@ -78,7 +79,7 @@ td{
 }
 
 a {
-    font-size: 1.4rem;
+    font-size: 1.8rem;
 }
 
 .alinear-izquierda {
@@ -1429,4 +1430,11 @@ gmp-map {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/** Formularios **/
+.formulario{
+    text-decoration: none;
+    color: var(--negro);
+    text-align: center;
 }

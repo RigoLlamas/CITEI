@@ -105,8 +105,8 @@ try {
                 </tr>
             </tbody>
         </table>
-        <div class="boton-volver">
-            <a href="ver_formulario.php" class="btn-volver">Volver a Formularios</a>
+        <div style="text-align: center;" class="cuadro">
+            <a class="formulario" href="ver_formularios.php" class="btn-volver">Volver a Formularios</a>
         </div>
     </section>
 </body>
