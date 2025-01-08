@@ -17,8 +17,9 @@ $resultadoRepartidores = $conexion->query($consultaRepartidores);
 
 // Consulta para obtener los envíos asignados al repartidor específico
 $consultaEnvios = $conexion->prepare("
-    SELECT e.Entrega, e.OrdenR, e.Cantidad, e.Vehiculo, p.Nombre AS Producto, v.Fecha, v.Estado, 
-           u.Calle, u.NumInterior, u.NumExterior, u.CP, u.Correo, u.Telefono, m.Municipio 
+    SELECT e.Entrega, e.OrdenR, e.Cantidad, e.Vehiculo, p.Nombre AS Producto, 
+           v.Fecha, v.Estado, u.Calle, u.NumInterior, u.NumExterior, u.CP, 
+           u.Correo, u.Telefono, m.Municipio, u.Latitud, u.Longitud 
     FROM envios e
     JOIN pedidos v ON e.NumVenta = v.NumVenta
     JOIN producto p ON e.Producto = p.PK_Producto
@@ -26,6 +27,7 @@ $consultaEnvios = $conexion->prepare("
     JOIN municipio m ON u.FK_Municipio = m.PK_Municipio
     WHERE e.Repartidor = ?
 ");
+
 $consultaEnvios->bind_param("i", $nominaRepartidor);
 $consultaEnvios->execute();
 $resultadoEnvios = $consultaEnvios->get_result();
@@ -48,6 +50,16 @@ if ($resultadoEnvios && $resultadoEnvios->num_rows > 0) {
 $resultadoRepartidores->free();
 $resultadoEnvios->free();
 $conexion->close();
+
+// Devuelve los datos como JSON si se solicita
+if (isset($_GET['json']) && $_GET['json'] == 1) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'repartidor' => $repartidores,
+        'envios'     => $envios
+    ]);
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -59,40 +71,136 @@ $conexion->close();
     <title>CITEI - Rutas</title>
     <script src="../js/pie.js" defer></script>
     <script src="../js/navbar.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo $googleMapsApiKey; ?>&callback=initMap" async defer></script>
     <script>
         let map;
-        let marker;
+        let defaultMarker;
         let intervalId;
+        let markers = [];
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let nomina = urlParams.get('nomina');
+
+        let currentLat = null;
+        let currentLng = null;
+
+        // Llamada inicial al cargar el repartidor seleccionado
+        document.addEventListener("DOMContentLoaded", () => {
+
+            if (nomina) {
+                startUpdatingCoordinates(nomina, 10000);
+            }
+        });
 
         // Inicializa el mapa con un marcador en las coordenadas predeterminadas
         function initMap() {
-            document.addEventListener("DOMContentLoaded", function () {
-                const mapContainer = document.getElementById("mapa");
+            const defaultLocation = {
+                lat: 20.673290,
+                lng: -103.416747
+            };
 
-                // Asegúrate de que el contenedor existe antes de inicializar el mapa
-                if (!mapContainer) {
-                    console.error("El contenedor del mapa no existe.");
-                    return;
-                }
-
-                const defaultLocation = {
-                    lat: 20.673290,
-                    lng: -103.416747
-                }; // Coordenadas predeterminadas
-
-                map = new google.maps.Map(mapContainer, {
-                    center: defaultLocation,
-                    zoom: 16,
-                });
-
-                // Crear un marcador en la ubicación predeterminada
-                marker = new google.maps.Marker({
-                    position: defaultLocation,
-                    map: map,
-                    title: "Mi ubicación inicial" // Título del marcador
-                });
+            map = new google.maps.Map(document.getElementById("mapa"), {
+                center: defaultLocation,
+                zoom: 14,
             });
+
+            // Crear un marcador en la ubicación predeterminada
+            defaultMarker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                title: "CITEI" // Título del marcador
+            });
+
+            if (nomina) {
+                loadMarkers();
+            }
+        }
+
+        function loadMarkers() {
+
+            if (!nomina) {
+                console.error("Nómina del repartidor no proporcionada.");
+                return;
+            }
+
+            fetch(`rutas.php?nomina=${nomina}&json=1`) // Obtén los datos en JSON
+                .then((response) => response.json())
+                .then((data) => {
+                    clearMarkers(); // Limpia marcadores existentes
+
+                    // Agregar marcador para la ubicación del repartidor
+                    if (data.repartidor) {
+                        const repartidorMarker = new google.maps.Marker({
+                            position: {
+                                lat: parseFloat(data.repartidor.Latitud),
+                                lng: parseFloat(data.repartidor.Longitud),
+                            },
+                            map: map,
+                            icon: {
+                                url: "https://maps.google.com/mapfiles/kml/shapes/man.png",
+                                scaledSize: new google.maps.Size(40, 40),
+                            },
+                            title: "Ubicación actual del repartidor",
+                        });
+                        markers.push(repartidorMarker);
+                    }
+
+                    // Agregar marcadores para los envíos
+                    if (data.envios && Array.isArray(data.envios)) {
+                        data.envios.forEach((envio) => {
+                            if (envio.Latitud && envio.Longitud) {
+                                const marker = new google.maps.Marker({
+                                    position: {
+                                        lat: parseFloat(envio.Latitud),
+                                        lng: parseFloat(envio.Longitud),
+                                    },
+                                    map: map,
+                                    title: `Pedido: ${envio.Producto}\nCliente: ${envio.Correo}`,
+                                });
+
+                                // InfoWindow para cada marcador
+                                const infoWindow = new google.maps.InfoWindow({
+                                    content: `
+                            <div>
+                                <p><strong>Producto:</strong> ${envio.Producto}</p>
+                                <p><strong>Cliente:</strong> ${envio.Correo}</p>
+                                <p><strong>Dirección:</strong> ${envio.Calle} ${envio.NumInterior}, ${envio.Municipio}</p>
+                                <p><strong>Teléfono:</strong> ${envio.Telefono}</p>
+                            </div>
+                        `,
+                                });
+
+                                marker.addListener("click", () => {
+                                    infoWindow.open(map, marker);
+                                });
+
+                                markers.push(marker);
+                            }
+                        });
+                    }
+
+                    // Centrar el mapa en la ubicación del repartidor
+                    if (data.repartidor) {
+                        map.setCenter({
+                            lat: parseFloat(data.repartidor.Latitud),
+                            lng: parseFloat(data.repartidor.Longitud),
+                        });
+                    } else if (data.envios && data.envios.length > 0) {
+                        const firstEnvio = data.envios[0];
+                        map.setCenter({
+                            lat: parseFloat(firstEnvio.Latitud),
+                            lng: parseFloat(firstEnvio.Longitud),
+                        });
+                    }
+                })
+                .catch((error) => console.error("Error al cargar los datos:", error));
+        }
+
+        // Limpia los marcadores existentes
+        function clearMarkers() {
+            markers.forEach((marker) => marker.setMap(null));
+            markers = [];
         }
 
         // Función para actualizar la ubicación del marcador en el mapa
@@ -101,10 +209,9 @@ $conexion->close();
                 lat: parseFloat(lat),
                 lng: parseFloat(lng)
             };
-            marker.setPosition(position);
-            marker.setTitle(title);
+            defaultMarker.setPosition(position);
+            defaultMarker.setTitle(title);
             map.setCenter(position);
-            map.setZoom(16);
         }
 
         // Función para obtener las coordenadas actualizadas del repartidor
@@ -113,8 +220,19 @@ $conexion->close();
                 .then(response => response.json())
                 .then(data => {
                     if (!data.error) {
-                        console.log(`Coordenadas actuales del repartidor ${nomina}: Latitud: ${data.Latitud}, Longitud: ${data.Longitud}`);
-                        updateMarker(data.Latitud, data.Longitud, `Repartidor ${nomina}`);
+                        // Convertir a número (float) para evitar problemas de tipos
+                        let newLat = parseFloat(data.Latitud);
+                        let newLng = parseFloat(data.Longitud);
+
+                        // Validamos si las coordenadas han cambiado
+                        if (currentLat !== newLat || currentLng !== newLng) {
+                            console.log('Las coordenadas cambiaron. Actualizando el marcador...');
+                            currentLat = newLat;
+                            currentLng = newLng;
+                            updateMarker(newLat, newLng, `Repartidor ${nomina}`);
+                        } else {
+                            console.log('Las coordenadas NO cambiaron. No se actualiza el marcador.');
+                        }
                     } else {
                         console.error(data.error);
                     }
@@ -123,7 +241,7 @@ $conexion->close();
         }
 
         // Configura el intervalo para actualizar la ubicación cada X tiempo
-        function startUpdatingCoordinates(nomina, interval = 5000) {
+        function startUpdatingCoordinates(nomina, interval) {
             if (intervalId) clearInterval(intervalId);
             intervalId = setInterval(() => fetchUpdatedCoordinates(nomina), interval);
         }
@@ -133,14 +251,138 @@ $conexion->close();
             if (intervalId) clearInterval(intervalId);
         }
 
-        // Llamada inicial al cargar el repartidor seleccionado
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const nomina = urlParams.get('nomina');
-            if (nomina) {
-                startUpdatingCoordinates(nomina);
-            }
-        });
+        // Función para retirar un pedido de la ruta
+        function retirarPedido(entregaId, nomina) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¿Deseas retirar este pedido de la ruta?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, retirar pedido',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`retirar_pedido.php?entrega=${entregaId}&nomina=${nomina}`, {
+                            method: 'GET'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire(
+                                    'Pedido retirado',
+                                    'El pedido ha sido retirado con éxito.',
+                                    'success'
+                                ).then(() => location.reload());
+                            } else {
+                                Swal.fire(
+                                    'Error',
+                                    `Error al retirar el pedido: ${data.error}`,
+                                    'error'
+                                );
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire(
+                                'Error',
+                                'Hubo un problema al procesar tu solicitud.',
+                                'error'
+                            );
+                            console.error('Error al retirar pedido:', error);
+                        });
+                }
+            });
+        }
+
+        // Función para cancelar toda la ruta
+        function cancelarRuta(nomina) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¿Deseas cancelar toda la ruta de este repartidor?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cancelar ruta',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`cancelar_ruta.php?nomina=${nomina}`, {
+                            method: 'GET'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire(
+                                    'Ruta cancelada',
+                                    'La ruta ha sido cancelada con éxito.',
+                                    'success'
+                                ).then(() => location.reload());
+                            } else {
+                                Swal.fire(
+                                    'Error',
+                                    `Error al cancelar la ruta: ${data.error}`,
+                                    'error'
+                                );
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire(
+                                'Error',
+                                'Hubo un problema al procesar tu solicitud.',
+                                'error'
+                            );
+                            console.error('Error al cancelar ruta:', error);
+                        });
+                }
+            });
+        }
+
+        function ejecutarPHP() {
+            Swal.fire({
+                title: 'Calculando nuevas rutas...',
+                text: 'Por favor, espera mientras procesamos los datos.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            fetch('../algoritmo_de_reparticion/algoritmo_de_reparticion.php')
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message,
+                            icon: 'error',
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error:'.data.message,
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                });
+        }
     </script>
 </head>
 
@@ -165,11 +407,11 @@ $conexion->close();
                     <li>No hay repartidores ocupados en este momento.</li>
                 <?php endif; ?>
             </ul>
+            <button style="margin-top: 5rem; width: auto;" onclick="ejecutarPHP()">Recalcular ruta</button>
         </div>
 
         <!-- Columna Derecha -->
         <div class="columna-derecha cuadro">
-            <!-- Fila Superior: Lista de Envíos -->
             <!-- Fila Superior: Lista de Envíos -->
             <div class="fila-envios">
                 <h3>Envíos Asignados</h3>
@@ -230,47 +472,6 @@ $conexion->close();
             </div>
         </div>
     </div>
-
-    <script>
-        // Retirar un pedido de la ruta
-        function retirarPedido(entregaId, nomina) {
-            if (confirm("¿Estás seguro de que deseas retirar este pedido de la ruta?")) {
-                fetch(`retirar_pedido.php?entrega=${entregaId}&nomina=${nomina}`, {
-                        method: 'GET'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert("Pedido retirado con éxito.");
-                            location.reload(); // Recargar la página para actualizar la lista
-                        } else {
-                            alert("Error al retirar el pedido: " + data.error);
-                        }
-                    })
-                    .catch(error => console.error('Error al retirar pedido:', error));
-            }
-        }
-
-        // Cancelar toda la ruta
-        function cancelarRuta(nomina) {
-            if (confirm("¿Estás seguro de que deseas cancelar toda la ruta de este repartidor?")) {
-                fetch(`cancelar_ruta.php?nomina=${nomina}`, {
-                        method: 'GET'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert("Ruta cancelada con éxito.");
-                            location.reload(); // Recargar la página para actualizar la lista
-                        } else {
-                            alert("Error al cancelar la ruta: " + data.error);
-                        }
-                    })
-                    .catch(error => console.error('Error al cancelar ruta:', error));
-            }
-        }
-    </script>
-
 </body>
 
 </html>
