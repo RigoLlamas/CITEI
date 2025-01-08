@@ -1,10 +1,21 @@
 <?php
-include '../php/conexion.php'; 
+include '../php/conexion.php';
 include '../php/solo_admins.php';
 
 try {
-    $query = "SELECT PK_Form, Fecha, Duracion, Repartidor FROM formulario";
-    $result = $conexion->query($query);
+    $sqlRepartidor = "
+    SELECT 
+    f.PK_Form,
+    f.Fecha,
+    f.Duracion,
+    f.Repartidor, 
+    r.Nombre,
+    r.Apellidos
+FROM formulario AS f
+INNER JOIN repartidor AS r
+    ON f.Repartidor = r.Nomina
+    ";
+    $result = $conexion->query($sqlRepartidor);
 
     if (!$result) {
         throw new Exception("Error en la consulta: " . $conexion->error);
@@ -16,13 +27,16 @@ try {
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CITEI - Formularios Registrados</title>
-    <script src="../js/pie.js"></script>
     <script src="../js/navbar.js"></script>
+    <script src="../js/pie.js"></script>
+    
 </head>
+
 <body>
     <header>
         <h1 class="titulo">Formularios Registrados</h1>
@@ -36,8 +50,9 @@ try {
                 <tr>
                     <th>ID</th>
                     <th>Fecha</th>
-                    <th>Duración (min)</th>
                     <th>Repartidor</th>
+                    <th>Nombre</th>
+                    <th>Duración (min)</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -47,10 +62,12 @@ try {
                         <tr>
                             <td><?= htmlspecialchars($row['PK_Form']) ?></td>
                             <td><?= htmlspecialchars($row['Fecha']) ?></td>
-                            <td><?= htmlspecialchars($row['Duracion']) ?></td>
                             <td><?= htmlspecialchars($row['Repartidor']) ?></td>
+                            <td><?= htmlspecialchars($row['Nombre'] . " " . $row['Apellidos']) ?></td>
+                            <td><?= htmlspecialchars($row['Duracion']) ?></td>
+                            
                             <td>
-                                <a href="formulario.php?id=<?= $row['PK_Form'] ?>" class="btn-ver">Ver Respuestas</a>
+                                <a class="formulario" href="formulario.php?id=<?= $row['PK_Form'] ?>" class="btn-ver">Ver Respuestas</a>
                             </td>
                         </tr>
                     <?php endwhile; ?>
@@ -87,4 +104,5 @@ try {
         }
     </script>
 </body>
+
 </html>
