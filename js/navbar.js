@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const enlacesComunes = `
         <a href="../productos/productos.php">Productos</a>
         <a href="../promociones/promociones.php">Promociones</a>
-        <a href="../envios/envios.php">Envíos</a>
         <a href="../acerca_de/acerca_de.php">Acerca de</a>
         <a href="../contactanos/contactanos.php">Contáctanos</a>
     `;
@@ -59,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </button>
                 <div class="menu" id="menu">
                     ${enlacesComunes}
-                    ${isAdmin ? enlacesAdmin : ""}
+                    ${isAdmin ? enlacesAdmin : `<a href="../envios/envios.php">Envíos</a>`}
                     ${isAdmin ? `<a href="../formularios/ver_formularios.php">Ver formularios</a>` : ""}
                     ${opcionesUsuario}
                 </div>
