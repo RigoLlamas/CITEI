@@ -689,6 +689,28 @@ class Ordenamiento
 
                     // Registrar el envío
                     if ($this->registrarEnvio($pedido, $repartidorForaneo)) {
+
+                        $distanciaRecorrida = $this->calcularDistanciaHaversine(
+                            $repartidorForaneo->getLatitud(),
+                            $repartidorForaneo->getLongitud(),
+                            $pedido->getLatitud(),
+                            $pedido->getLongitud()
+                        );
+                
+                        //Obtenemos los kilómetros actuales del vehículo
+                        $vehiculo = $repartidorForaneo->getVehiculo();
+                        $placa = $vehiculo->getPlaca();
+                        $kmActuales = $vehiculo->getKilometrosRecorridos();
+                
+                        // Actualizar la distancia recién recorrida
+                        $kmNuevos = $kmActuales + $distanciaRecorrida;
+                        $this->actualizarKilometrosRecorridos($placa, $kmNuevos);
+                        $vehiculo->setKilometrosRecorridos($kmNuevos);
+
+                        $repartidorForaneo->actualizarVolumenOcupado($pedido->getVolumenTotal());
+                        $repartidorForaneo->actualizarUbicacion($pedido->getLatitud(), $pedido->getLongitud());
+                        $repartidorForaneo->incrementarPedidosAsignados();
+
                         echo "Pedido ID: {$pedido->getPedido()} asignado al repartidor foráneo {$repartidorForaneo->getNomina()}.\n";
                         $repartidorForaneo->actualizarVolumenOcupado($pedido->getVolumenTotal());
                         $repartidorForaneo->actualizarUbicacion($pedido->getLatitud(), $pedido->getLongitud());
@@ -729,6 +751,24 @@ class Ordenamiento
                 if ($nodoAsignado) {
                     echo "Pedido ID: {$pedido->getPedido()} asignado al repartidor local {$nodoAsignado->getNomina()}.\n";
                     if ($this->registrarEnvio($pedido, $nodoAsignado)) {
+
+                        $distanciaRecorrida = $this->calcularDistanciaHaversine(
+                            $nodoAsignado->getLatitud(),
+                            $nodoAsignado->getLongitud(),
+                            $pedido->getLatitud(),
+                            $pedido->getLongitud()
+                        );
+                
+                        //Obtenemos los kilómetros actuales del vehículo
+                        $vehiculo = $nodoAsignado->getVehiculo();
+                        $placa = $vehiculo->getPlaca();
+                        $kmActuales = $vehiculo->getKilometrosRecorridos();
+                
+                        // Actualizar la distancia recién recorrida
+                        $kmNuevos = $kmActuales + $distanciaRecorrida;
+                        $this->actualizarKilometrosRecorridos($placa, $kmNuevos);
+                        $vehiculo->setKilometrosRecorridos($kmNuevos);
+
                         $nodoAsignado->actualizarVolumenOcupado($pedido->getVolumenTotal());
                         $nodoAsignado->actualizarUbicacion($pedido->getLatitud(), $pedido->getLongitud());
                         $nodoAsignado->incrementarPedidosAsignados();
