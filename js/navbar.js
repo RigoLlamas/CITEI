@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const enlacesComunes = `
         <a href="../productos/productos.php">Productos</a>
         <a href="../promociones/promociones.php">Promociones</a>
-        <a href="../envios/envios.php">Envíos</a>
         <a href="../acerca_de/acerca_de.php">Acerca de</a>
         <a href="../contactanos/contactanos.php">Contáctanos</a>
     `;
@@ -30,6 +29,17 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="user-options" id="user-options">
                 <a href="../pedidos_usuario/pedidos.php">Pedidos</a>
                 <a href="../perfil/perfil_usuario.php">Perfil</a>
+                <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
+            </div>
+        </div>
+    `;
+
+    const opcionesAdmin = `
+        <div class="user-menu-container">
+            <div class="user-icon">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="user-options" id="user-options">
                 <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
             </div>
         </div>
@@ -60,8 +70,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="menu" id="menu">
                     ${enlacesComunes}
                     ${isAdmin ? enlacesAdmin : ""}
-                    ${isAdmin ? `<a href="../formularios/ver_formularios.php">Ver formularios</a>` : ""}
-                    ${opcionesUsuario}
+                    ${isAdmin ? `<a href="../formularios/ver_formularios.php">Ver formularios</a>` : `<a href="../envios/envios.php">Envíos</a>`}
+                    ${isAdmin ? opcionesAdmin : opcionesUsuario}
                 </div>
             </nav>
         </div>
