@@ -16,7 +16,6 @@ class Repartidor
     private $volumenOcupado;
     private $tiempo;
     private $numOrdenActual;
-    private $esForaneo;
     private $horaLimite;
 
     public function __construct(
@@ -29,7 +28,6 @@ class Repartidor
         $descanso = 0,
         $horaBandera = null,
         $vehiculo = null,
-        $esForaneo = false,
         $horaLimite = null
     ) {
         $this->nomina = $nomina;
@@ -70,7 +68,6 @@ class Repartidor
         $this->pedidosAsignados = 0;
         $this->volumenOcupado = 0;
         $this->tiempo = new DateTime('09:00:00'); // Tiempo inicial
-        $this->esForaneo = $esForaneo;
         $this->numOrdenActual = 0;
     }
 
