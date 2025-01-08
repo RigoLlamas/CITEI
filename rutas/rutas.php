@@ -285,7 +285,6 @@ if (isset($_GET['json']) && $_GET['json'] == 1) {
                                 'Hubo un problema al procesar tu solicitud.',
                                 'error'
                             );
-                            console.error('Error al retirar pedido:', error);
                         });
                 }
             });
@@ -329,7 +328,6 @@ if (isset($_GET['json']) && $_GET['json'] == 1) {
                                 'Hubo un problema al procesar tu solicitud.',
                                 'error'
                             );
-                            console.error('Error al cancelar ruta:', error);
                         });
                 }
             });
