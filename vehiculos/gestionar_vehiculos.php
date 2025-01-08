@@ -1,7 +1,8 @@
-<?php 
+<?php
 include '../php/conexion.php';
 include '../php/solo_admins.php';
 
+// Verificamos si se ha enviado el formulario de creación de vehículo
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['placa'])) {
     $placa = trim($conexion->real_escape_string($_POST['placa']));
     $largo = (float) $_POST['largo'];
@@ -10,19 +11,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['placa'])) {
     $modelo = trim($conexion->real_escape_string($_POST['modelo']));
     $estado = trim($conexion->real_escape_string($_POST['estado']));
 
-    // SQL para insertar un nuevo vehículo
-    $sql = "INSERT INTO vehiculo (Placa, Largo, Alto, Ancho, Modelo, Estado)
-            VALUES ('$placa', $largo, $alto, $ancho, '$modelo', '$estado')";
+    // Nuevo campo KilometrosRecorridos
+    $kilometrosRecorridos = (int) $_POST['kilometrosRecorridos'];
+
+    // SQL para insertar un nuevo vehículo (incluyendo KilometrosRecorridos)
+    $sql = "INSERT INTO vehiculo (Placa, Largo, Alto, Ancho, Modelo, Estado, KilometrosRecorridos)
+            VALUES ('$placa', $largo, $alto, $ancho, '$modelo', '$estado', $kilometrosRecorridos)";
+    
     if (mysqli_query($conexion, $sql)) {
         header('Location: gestionar_vehiculos.php?success=true');
         exit();
+    } else {
+        echo "Error al insertar el vehículo: " . mysqli_error($conexion);
     }
 }
 
-// Consulta para obtener la lista de vehículos
-$sql_lista = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado FROM vehiculo";
+// Consulta para obtener la lista de vehículos (incluimos KilometrosRecorridos)
+$sql_lista = "SELECT Placa, Largo, Alto, Ancho, Modelo, Estado, KilometrosRecorridos FROM vehiculo";
 $resultado = mysqli_query($conexion, $sql_lista);
 
+// Consulta para contar cuántos vehículos hay
 $sql_contar = "SELECT COUNT(*) as total FROM vehiculo";
 $resultado_contar = mysqli_query($conexion, $sql_contar);
 $total_vehiculos = mysqli_fetch_assoc($resultado_contar)['total'];
@@ -46,6 +54,7 @@ mysqli_close($conexion);
 <body>
 
 <?php
+// Notificación de éxito al agregar vehículo
 if (isset($_GET['success']) && $_GET['success'] === 'true') {
     echo "<script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -65,6 +74,7 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
 
 <div class="contenedor-vehiculo cuadro">
     <form id="formAgregarVehiculo" action="gestionar_vehiculos.php" method="POST">
+        <!-- Fila 1: Placa, Largo, Alto, Ancho -->
         <div style="display: flex; flex-direction: row;">
             <div style="width: 40%;">
                 <p style="text-align: left;">Placa:</p>
@@ -82,10 +92,11 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                 <p style="text-align: left;">Ancho de cabina (m):</p>
                 <input type="number" id="ancho" name="ancho" step="0.01" min="0.1" max="20" required>
             </div>
-        </div>    
+        </div>
 
+        <!-- Fila 2: Modelo, Estado, KilometrosRecorridos -->
         <div style="display: flex; flex-direction: row; margin-top: 20px;">
-            <div style="width: 50%;">
+            <div style="width: 30%;">
                 <p>Modelo:</p>
                 <input style="width: 100%;" type="text" id="modelo" name="modelo" minlength="1" maxlength="50" required>
             </div>
@@ -96,8 +107,14 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
                     <option value="En circulacion">En circulación</option>
                 </select>
             </div>
+            <div style="width: 30%; margin-left: 5%;">
+                <p style="text-align: left;">Kilómetros Recorridos:</p>
+                <input type="number" id="kilometrosRecorridos" name="kilometrosRecorridos"
+                       step="1" min="0" required>
+            </div>
         </div>
 
+        <!-- Botón Agregar -->
         <div class="botones-vehiculos" style="margin-top: 20px; display: flex; justify-content: flex-end;">
             <button type="button" id="btnAgregarVehiculo" <?php if ($deshabilitar_boton) echo 'disabled'; ?>>
                 Agregar <br>Vehículo
@@ -113,7 +130,9 @@ if (isset($_GET['success']) && $_GET['success'] === 'true') {
             if ($resultado && mysqli_num_rows($resultado) > 0) {
                 while ($vehiculo = mysqli_fetch_assoc($resultado)) {
                     echo "<li>";
-                    echo "Placa: " . $vehiculo['Placa'] . " - Modelo: " . $vehiculo['Modelo'] . " (Estado: " . $vehiculo['Estado'] . ")";
+                    // Mostramos KilometrosRecorridos
+                    echo "Placa: " . $vehiculo['Placa'] . " - Modelo: " . $vehiculo['Modelo']
+                       . " (Estado: " . $vehiculo['Estado'] . ", Kilometraje: " . $vehiculo['KilometrosRecorridos'] . ")";
                     echo "<div>";
                     echo "<a href='modificar_vehiculo.php?placa=" . $vehiculo['Placa'] . "'>Modificar</a> | ";
                     echo "<a href='eliminar_vehiculo.php?placa=" . $vehiculo['Placa'] . "' class='btnEliminarVehiculo'>Eliminar</a>";
