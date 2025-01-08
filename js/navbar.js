@@ -34,6 +34,17 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
     `;
 
+    const opcionesAdmin = `
+        <div class="user-menu-container">
+            <div class="user-icon">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="user-options" id="user-options">
+                <a href="../php/cerrar_sesion.php">Cerrar Sesión</a>
+            </div>
+        </div>
+    `;
+
     // Generar la navegación
     const navegacion = `
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
@@ -58,9 +69,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 </button>
                 <div class="menu" id="menu">
                     ${enlacesComunes}
+<<<<<<< HEAD
+                    ${isAdmin ? enlacesAdmin : ""}
+                    ${isAdmin ? `<a href="../formularios/ver_formularios.php">Ver formularios</a>` : `<a href="../envios/envios.php">Envíos</a>`}
+                    ${isAdmin ? opcionesAdmin : opcionesUsuario}
+=======
                     ${isAdmin ? enlacesAdmin : `<a href="../envios/envios.php">Envíos</a>`}
                     ${isAdmin ? `<a href="../formularios/ver_formularios.php">Ver formularios</a>` : ""}
                     ${opcionesUsuario}
+>>>>>>> de2d038c5038c9375559c92736fd5643925c0cc5
                 </div>
             </nav>
         </div>
