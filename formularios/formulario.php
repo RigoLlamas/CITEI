@@ -31,6 +31,7 @@ try {
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,6 +39,7 @@ try {
     <script src="../js/pie.js"></script>
     <script src="../js/navbar.js"></script>
 </head>
+
 <body>
     <header>
         <h1 class="titulo">Respuestas del Formulario</h1>
@@ -77,11 +79,15 @@ try {
                 </tr>
                 <tr>
                     <td>Kilometraje</td>
-                    <td><?= htmlspecialchars($respuesta['Kilometraje']) ?></td>
+                    <td>
+                        <img src="<?= htmlspecialchars($respuesta['Kilometraje']) ?>" alt="Kilometraje" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="expandImage(this)">
+                    </td>
                 </tr>
                 <tr>
                     <td>Gasolina</td>
-                    <td><?= htmlspecialchars($respuesta['Gasolina']) ?></td>
+                    <td>
+                        <img src="<?= htmlspecialchars($respuesta['Gasolina']) ?>" alt="Gasolina" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="expandImage(this)">
+                    </td>
                 </tr>
                 <tr>
                     <td>Comentario</td>
@@ -109,5 +115,27 @@ try {
             <a class="formulario" href="ver_formularios.php" class="btn-volver">Volver a Formularios</a>
         </div>
     </section>
+    <!-- Modal -->
+    <div id="imageModal" class="modal-formulario">
+        <span class="close-formulario" onclick="closeModal()">&times;</span>
+        <img class="modal-formulario-content" id="modalImage">
+    </div>
+
+    <script>
+        // Función para expandir la imagen
+        function expandImage(img) {
+            const modal = document.getElementById("imageModal");
+            const modalImg = document.getElementById("modalImage");
+            modal.style.display = "block";
+            modalImg.src = img.src;
+        }
+
+        // Función para cerrar el modal
+        function closeModal() {
+            const modal = document.getElementById("imageModal");
+            modal.style.display = "none";
+        }
+    </script>
 </body>
+
 </html>

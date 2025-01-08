@@ -34,7 +34,8 @@ INNER JOIN repartidor AS r
     <title>CITEI - Formularios Registrados</title>
     <script src="../js/navbar.js"></script>
     <script src="../js/pie.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="formulario.js" defer></script>
 </head>
 
 <body>
@@ -65,10 +66,13 @@ INNER JOIN repartidor AS r
                             <td><?= htmlspecialchars($row['Repartidor']) ?></td>
                             <td><?= htmlspecialchars($row['Nombre'] . " " . $row['Apellidos']) ?></td>
                             <td><?= htmlspecialchars($row['Duracion']) ?></td>
-                            
-                            <td>
-                                <a class="formulario" href="formulario.php?id=<?= $row['PK_Form'] ?>" class="btn-ver">Ver Respuestas</a>
+                            <td style="text-align: center;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; border-left: 1px solid #ccc; padding-left: 10px;">
+                                    <a class="formulario" href="formulario.php?id=<?= $row['PK_Form'] ?>">Ver Respuestas</a>
+                                    <a class="formulario" href="javascript:void(0);" onclick="confirmarEliminacion(<?= $row['PK_Form'] ?>)">Eliminar</a>
+                                </div>
                             </td>
+
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
@@ -79,30 +83,29 @@ INNER JOIN repartidor AS r
             </tbody>
         </table>
     </section>
-    <script>
-        function buscarFormularios() {
-            const busqueda = document.getElementById('busqueda').value.toLowerCase();
-            const filas = document.querySelectorAll('#tablaFormularios tbody tr');
-            let resultados = false;
-
-            filas.forEach(fila => {
-                const texto = fila.innerText.toLowerCase();
-                if (texto.includes(busqueda)) {
-                    fila.style.display = '';
-                    resultados = true;
-                } else {
-                    fila.style.display = 'none';
-                }
+    
+    <?php if (isset($_GET['status'])): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                <?php if ($_GET['status'] === 'success'): ?>
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: 'El formulario se eliminó correctamente.',
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar'
+                    });
+                <?php elseif ($_GET['status'] === 'error'): ?>
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ocurrió un problema al eliminar el formulario.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                <?php endif; ?>
             });
+        </script>
+    <?php endif; ?>
 
-            const sinResultados = document.querySelector('.sin-resultados');
-            if (!resultados && sinResultados) {
-                sinResultados.style.display = 'block';
-            } else if (sinResultados) {
-                sinResultados.style.display = 'none';
-            }
-        }
-    </script>
 </body>
 
 </html>
