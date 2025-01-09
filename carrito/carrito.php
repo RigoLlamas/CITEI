@@ -97,12 +97,11 @@ if ($totalCarritoFinal < 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrito de compras</title>
+    <title>CITEI - Carrito de compras</title>
     <script src="../js/pie.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=AaoThmU6Z2xJw6dIYXzMf4y9zVZfJG70_Juv4FIog_hrVbLxVex50GZbW3qh3mXkg7yFKily5W9DIPKC&currency=MXN&intent=capture"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Incluye tu archivo JavaScript principal -->
     <script src="carrito.js"></script>
 </head>
 
@@ -116,12 +115,26 @@ if ($totalCarritoFinal < 0) {
             <div class="lista-productos">
                 <?php if (!empty($productosCarrito)) { ?>
                     <?php foreach ($productosCarrito as $producto) {
-                        $rutaImagen = '../productos/imagenes_productos/producto_' . $producto['PK_Producto'] . '/1.jpg';
-                        if (!file_exists($rutaImagen)) {
-                            $rutaImagen = '../img/logo.png';
-                        } ?>
+                        // Ruta base de las imágenes
+                        $ruta_base_imagenes = '../productos/imagenes_productos/';
+                        $ruta_logo = '../img/logo.png'; // Ruta del logo por defecto
+                        $carpeta_imagenes = $ruta_base_imagenes . 'producto_' . $producto['PK_Producto'] . '/';
+
+                        // Verificar si existe una imagen
+                        $ruta_imagen_jpg = $carpeta_imagenes . '1.jpg';
+                        $ruta_imagen_png = $carpeta_imagenes . '1.png';
+                        
+                        if (file_exists($ruta_imagen_jpg)) {
+                            $ruta_imagen = $ruta_imagen_jpg;
+                        } elseif (file_exists($ruta_imagen_png)) {
+                            $ruta_imagen = $ruta_imagen_png;
+                        } else {
+                            // Si no existe ninguna de las imágenes, usar el logo por defecto
+                            $ruta_imagen = $ruta_logo;
+                        }
+                    ?>
                         <div class="producto_carrito" data-id="<?= htmlspecialchars($producto['PK_Producto']) ?>">
-                            <img src="<?= htmlspecialchars($rutaImagen) ?>" alt="<?= htmlspecialchars($producto['Nombre']) ?>">
+                            <img src="<?= htmlspecialchars($ruta_imagen) ?>" alt="<?= htmlspecialchars($producto['Nombre']) ?>">
                             <div class="info-producto">
                                 <p><?= htmlspecialchars($producto['Nombre']) ?></p>
                                 <p>Precio: $<?= number_format(floatval($producto['Precio']), 2) ?></p>
@@ -187,7 +200,7 @@ if ($totalCarritoFinal < 0) {
                         $resultadoOfertaAplicada = $stmtOfertaAplicada->get_result();
                         if ($resultadoOfertaAplicada && $resultadoOfertaAplicada->num_rows > 0) {
                             $ofertaAplicada = $resultadoOfertaAplicada->fetch_assoc();
-                            ?>
+                    ?>
                             <div class="oferta-aplicada">
                                 <p><strong>Descripción:</strong> <?= htmlspecialchars($ofertaAplicada['Descripcion']) ?></p>
                                 <p><strong>Tipo:</strong> <?= htmlspecialchars($ofertaAplicada['Tipo']) ?></p>
@@ -218,7 +231,7 @@ if ($totalCarritoFinal < 0) {
             <!-- Mostrar siempre el total y el descuento -->
             <p class='total'><strong>Costo total:</strong> $<?= number_format($totalCarritoFinal, 2) ?></p>
             <p class='descuento'><strong>Descuento aplicado:</strong> $<?= $descuento > 0 ? number_format($descuento, 2) : '0.00' ?></p>
-            
+
             <!-- Contenedor del botón de PayPal -->
             <div id="paypal-button-container"></div>
         </div>
@@ -263,9 +276,9 @@ if ($totalCarritoFinal < 0) {
                                 Swal.fire('Error', json.error, 'error');
                             } else {
                                 Swal.fire('Éxito', json.success + ' Total: $' + json.totalConDescuento, 'success')
-                                .then(() => {
-                                    location.reload();
-                                });;
+                                    .then(() => {
+                                        location.reload();
+                                    });;
                             }
                         })
                         .catch(error => {
@@ -331,4 +344,3 @@ if ($totalCarritoFinal < 0) {
         });
     });
 </script>
-
