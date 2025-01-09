@@ -73,6 +73,92 @@ if (isset($_GET['json']) && $_GET['json'] == 1) {
     <script src="../js/navbar.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="rutas.js" defer></script>
+</head>
+
+<body>
+    <div class="rutas-contenedor">
+        <!-- Columna Izquierda: Lista de Repartidores -->
+        <div class="columna-izquierda cuadro">
+            <h3>Repartidores Ocupados</h3>
+            <ul id="lista-repartidores">
+                <?php if (!empty($repartidores)): ?>
+                    <?php foreach ($repartidores as $repartidor): ?>
+                        <li>
+                            <a href="rutas.php?nomina=<?= htmlspecialchars($repartidor['Nomina']) ?>">
+                                <strong><?= htmlspecialchars($repartidor['Nombre'] . " " . $repartidor['Apellidos']) ?></strong>
+                            </a><br>
+                            (Nómina: <?= htmlspecialchars($repartidor['Nomina']) ?>) -
+                            <span>Estado: <?= htmlspecialchars($repartidor['Estado']) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <li>No hay repartidores ocupados en este momento.</li>
+                <?php endif; ?>
+            </ul>
+            <button style="margin-top: 5rem; width: auto;" onclick="ejecutarPHP()">Recalcular ruta</button>
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="columna-derecha cuadro">
+            <!-- Fila Superior: Lista de Envíos -->
+            <div class="fila-envios">
+                <h3>Envíos Asignados</h3>
+                <ul id="lista-envios">
+                    <?php if ($nominaRepartidor == 0): ?>
+                        <li>Seleccione un repartidor.</li>
+                    <?php elseif (!empty($envios)): ?>
+                        <?php foreach ($envios as $envio): ?>
+                            <div class="ruta-info" style="display: flex;">
+                                <div>
+                                    <p style="text-align: left;">
+                                        <strong>Entrega #:</strong> <?= $envio['Entrega'] ?><br>
+                                        <strong>Orden:</strong> <?= $envio['OrdenR'] ?><br>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p style="text-align: left;">
+                                        <strong>Estado:</strong> <?= $envio['Estado'] ?><br>
+                                        <strong>Vehículo:</strong> <?= $envio['Vehiculo'] ?><br>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p style="text-align: left;">
+                                        <strong>Producto:</strong> <?= $envio['Producto'] ?><br>
+                                        <strong>Cantidad:</strong> <?= $envio['Cantidad'] ?><br>
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <p style="text-align: justify;"><strong>Direccion:</strong> <?= $envio['Calle'] ?> <?= $envio['NumInterior'] ?> <?= $envio['NumExterior'] ?><br>
+                                    <strong>Municipio:</strong> <?= $envio['Municipio'] ?><br>
+                                    <strong>CP:</strong> <?= $envio['CP'] ?><br>
+                                    <strong>Correo:</strong> <?= $envio['Correo'] ?><br>
+                                    <strong>Telefono:</strong> <?= $envio['Telefono'] ?>
+                                </p><br>
+                            </div>
+                            <!-- Botón para retirar este pedido -->
+                            <button onclick="retirarPedido(<?= $envio['Entrega'] ?>, <?= $nominaRepartidor ?>)"
+                                style="width: auto; display: flex;">Retirar Pedido</button>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li>No hay envíos asignados a este repartidor.</li>
+                    <?php endif; ?>
+                </ul>
+                <!-- Botón para cancelar toda la ruta -->
+                <?php if ($nominaRepartidor != 0 && !empty($envios)): ?>
+                    <button onclick="cancelarRuta(<?= $nominaRepartidor ?>)">Cancelar Ruta</button>
+                <?php endif; ?>
+            </div>
+
+
+            <!-- Fila Inferior: Mapa -->
+            <div class="fila-mapa cuadro">
+                <div id="mapa" style="width: 100%; height: 100%;">
+                    <!-- Google Maps se mostrará aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo $googleMapsApiKey; ?>&callback=initMap" async defer></script>
     <script>
         let map;
@@ -197,92 +283,6 @@ if (isset($_GET['json']) && $_GET['json'] == 1) {
                 .catch((error) => console.error("Error al cargar los datos:", error));
         }        
     </script>
-</head>
-
-<body>
-    <div class="rutas-contenedor">
-        <!-- Columna Izquierda: Lista de Repartidores -->
-        <div class="columna-izquierda cuadro">
-            <h3>Repartidores Ocupados</h3>
-            <ul id="lista-repartidores">
-                <?php if (!empty($repartidores)): ?>
-                    <?php foreach ($repartidores as $repartidor): ?>
-                        <li>
-                            <a href="rutas.php?nomina=<?= htmlspecialchars($repartidor['Nomina']) ?>">
-                                <strong><?= htmlspecialchars($repartidor['Nombre'] . " " . $repartidor['Apellidos']) ?></strong>
-                            </a><br>
-                            (Nómina: <?= htmlspecialchars($repartidor['Nomina']) ?>) -
-                            <span>Estado: <?= htmlspecialchars($repartidor['Estado']) ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <li>No hay repartidores ocupados en este momento.</li>
-                <?php endif; ?>
-            </ul>
-            <button style="margin-top: 5rem; width: auto;" onclick="ejecutarPHP()">Recalcular ruta</button>
-        </div>
-
-        <!-- Columna Derecha -->
-        <div class="columna-derecha cuadro">
-            <!-- Fila Superior: Lista de Envíos -->
-            <div class="fila-envios">
-                <h3>Envíos Asignados</h3>
-                <ul id="lista-envios">
-                    <?php if ($nominaRepartidor == 0): ?>
-                        <li>Seleccione un repartidor.</li>
-                    <?php elseif (!empty($envios)): ?>
-                        <?php foreach ($envios as $envio): ?>
-                            <div class="ruta-info" style="display: flex;">
-                                <div>
-                                    <p style="text-align: left;">
-                                        <strong>Entrega #:</strong> <?= $envio['Entrega'] ?><br>
-                                        <strong>Orden:</strong> <?= $envio['OrdenR'] ?><br>
-                                    </p>
-                                </div>
-                                <div>
-                                    <p style="text-align: left;">
-                                        <strong>Estado:</strong> <?= $envio['Estado'] ?><br>
-                                        <strong>Vehículo:</strong> <?= $envio['Vehiculo'] ?><br>
-                                    </p>
-                                </div>
-                                <div>
-                                    <p style="text-align: left;">
-                                        <strong>Producto:</strong> <?= $envio['Producto'] ?><br>
-                                        <strong>Cantidad:</strong> <?= $envio['Cantidad'] ?><br>
-                                    </p>
-                                </div>
-                            </div>
-                            <div>
-                                <p style="text-align: justify;"><strong>Direccion:</strong> <?= $envio['Calle'] ?> <?= $envio['NumInterior'] ?> <?= $envio['NumExterior'] ?><br>
-                                    <strong>Municipio:</strong> <?= $envio['Municipio'] ?><br>
-                                    <strong>CP:</strong> <?= $envio['CP'] ?><br>
-                                    <strong>Correo:</strong> <?= $envio['Correo'] ?><br>
-                                    <strong>Telefono:</strong> <?= $envio['Telefono'] ?>
-                                </p><br>
-                            </div>
-                            <!-- Botón para retirar este pedido -->
-                            <button onclick="retirarPedido(<?= $envio['Entrega'] ?>, <?= $nominaRepartidor ?>)"
-                                style="width: auto; display: flex;">Retirar Pedido</button>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <li>No hay envíos asignados a este repartidor.</li>
-                    <?php endif; ?>
-                </ul>
-                <!-- Botón para cancelar toda la ruta -->
-                <?php if ($nominaRepartidor != 0 && !empty($envios)): ?>
-                    <button onclick="cancelarRuta(<?= $nominaRepartidor ?>)">Cancelar Ruta</button>
-                <?php endif; ?>
-            </div>
-
-
-            <!-- Fila Inferior: Mapa -->
-            <div class="fila-mapa cuadro">
-                <div id="mapa" style="width: 100%; height: 100%;">
-                    <!-- Google Maps se mostrará aquí -->
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 
 </html>
