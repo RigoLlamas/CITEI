@@ -1,4 +1,5 @@
 <?php
+include '../php/conexion.php';
 session_start();
 
 // Si el usuario no es admin (id_usuario != 1), se muestra la alerta de acceso restringido
@@ -38,7 +39,7 @@ if (isset($_GET['alertado']) && $_GET['alertado'] == '1') {
 }
 
 if (!isset($_SESSION['alertCambioAceite']) || $_SESSION['alertCambioAceite'] !== true) {
-    include '../php/conexion.php';
+
 
     // Consulta para detectar vehículos con más de 10,000 Km
     $sql = "SELECT Placa FROM vehiculo WHERE KilometrosRecorridos > 10000";
@@ -64,8 +65,5 @@ if (!isset($_SESSION['alertCambioAceite']) || $_SESSION['alertCambioAceite'] !==
         </script>
 <?php
     }
-
-    // Cerrar la conexión
-    mysqli_close($conexion);
 }
 ?>
